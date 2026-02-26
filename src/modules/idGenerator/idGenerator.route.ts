@@ -1,0 +1,17 @@
+import { Router } from 'express';
+import * as controller from './idGenerator.controller.js';
+import { validate } from '../../middlewares/validate.js';
+import { createIdGeneratorSchema, updateIdGeneratorSchema } from './idGenerator.validation.js';
+import { authenticate } from '../../middlewares/auth.js';
+
+const router = Router();
+
+router.use(authenticate);
+
+router.get('/', controller.getAllIdGenerators);
+router.get('/:id', controller.getIdGeneratorById);
+router.post('/', validate(createIdGeneratorSchema), controller.createIdGenerator);
+router.put('/:id', validate(updateIdGeneratorSchema), controller.updateIdGenerator);
+router.delete('/:id', controller.deleteIdGenerator);
+
+export default router;
