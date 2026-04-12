@@ -71,24 +71,26 @@ export class DealerService {
                 }
             }
 
-            // Update shipping addresses if provided
+            // Update shipping address if provided
             if (shippingAddress) {
-                // Simplest way is to remove all and recreate
-                // But Address model doesn't have a direct backlink to Dealer for shippingAddress relation
-                // Wait, Dealer has `shippingAddress Address[] @relation("DealerHasShippingAddress")`
-                // This means Address must have a field for this relation.
-                // Let me check schema.prisma again for Address fields relative to Dealer.
-
-                // If Address has dealerId (implicit or explicit), we can deleteMany.
-                await tx.dealer.update({
+                const currentDealer = await tx.dealer.findUnique({
                     where: { id },
-                    data: {
-                        shippingAddress: {
-                            deleteMany: {},
-                            create: shippingAddress
-                        }
-                    }
+                    select: { shippingAddressId: true }
                 });
+
+                if (currentDealer?.shippingAddressId) {
+                    await tx.address.update({
+                        where: { id: currentDealer.shippingAddressId },
+                        data: shippingAddress
+                    });
+                } else {
+                    await tx.dealer.update({
+                        where: { id },
+                        data: {
+                            shippingAddress: { create: shippingAddress }
+                        }
+                    });
+                }
             }
 
             return tx.dealer.findUnique({

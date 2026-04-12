@@ -15,5 +15,7 @@ router.get('/', VehicleStockInwardController.getAll);
 router.post('/process-pdf', upload.single('pdf'), VehicleStockInwardController.processPdf as any);
 router.post('/', VehicleStockInwardController.create);
 router.get('/:id', VehicleStockInwardController.getById);
+router.put('/:id', VehicleStockInwardController.update);
+router.delete('/:id', VehicleStockInwardController.delete);
 
 export default router;

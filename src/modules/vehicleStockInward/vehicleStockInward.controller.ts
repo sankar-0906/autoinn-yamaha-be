@@ -18,7 +18,7 @@ export class VehicleStockInwardController {
 
             const data = await VehicleStockInwardService.processPdf(req.file.path);
 
-            console.log('[VehicleStockInwardController] PDF processing successful');
+            console.log(`[VehicleStockInwardController] PDF processing successful. Sending ${data.VEHICLES.length} vehicles to frontend.`);
             res.json({ success: true, data });
         } catch (error: any) {
             console.error('[VehicleStockInwardController] Error processing PDF:', error);
@@ -58,6 +58,28 @@ export class VehicleStockInwardController {
                 return res.status(404).json({ success: false, message: 'Record not found' });
             }
             res.json({ success: true, data });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    static async update(req: Request, res: Response) {
+        try {
+            const id = req.params.id;
+            if (!id) return res.status(400).json({ success: false, message: 'ID is required' });
+            const data = await VehicleStockInwardService.update(id, req.body);
+            res.json({ success: true, data });
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    static async delete(req: Request, res: Response) {
+        try {
+            const id = req.params.id;
+            if (!id) return res.status(400).json({ success: false, message: 'ID is required' });
+            await VehicleStockInwardService.delete(id);
+            res.json({ success: true, message: 'Deleted successfully' });
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message });
         }

@@ -4,6 +4,8 @@ import logger from './utils/logger.js';
 
 dotenv.config();
 
+import './modules/vehicleStockInward/vehicleStockInward.worker.js';
+
 const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {

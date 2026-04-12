@@ -7,6 +7,8 @@ export class AuthController {
     static async login(req: Request, res: Response, next: NextFunction) {
         try {
             const { phone, password } = req.body;
+            console.log(phone, password, "login cred");
+
             const result = await AuthService.login(phone, password);
             return sendSuccess(res, 'Login successful', result);
         } catch (error: any) {

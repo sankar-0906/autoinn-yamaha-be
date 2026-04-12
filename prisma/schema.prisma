@@ -1,6 +1,5 @@
 generator client {
-  provider   = "prisma-client-js"
-  engineType = "library"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -21,20 +20,22 @@ model Company {
   createdById   String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  branches      Branch[] @relation("CompanyHasManyBranch")
-  address       Address? @relation("CompanyHasAddress", fields: [addressId], references: [id], onDelete: Cascade)
-  createdBy     User?    @relation("CompanyWasCreatedByUser", fields: [createdById], references: [id])
+  
+  address   Address? @relation("CompanyHasAddress", fields: [addressId], references: [id], onDelete: Cascade)
+  branches  Branch[] @relation("CompanyHasManyBranch")
+  createdBy User?   @relation("CompanyWasCreatedByUser", fields: [createdById], references: [id])
 }
 
 model Department {
-  id               String            @id @default(cuid())
-  role             String            @unique
-  departmentType   String[]
-  othersAccess     Boolean?          @default(false)
-  createdById      String?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  createdBy        User?             @relation("DepartmentWasCreatedBy", fields: [createdById], references: [id])
+  id             String          @id @default(cuid())
+  role           String          @unique
+  departmentType String[]
+  othersAccess   Boolean?        @default(false)
+  createdById    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  
+  createdBy        User?           @relation("DepartmentWasCreatedBy", fields: [createdById], references: [id])
   employeeProfiles EmployeeProfile[] @relation("EmployeeProfileHasDepartment")
   roleAccess       RoleAccess[]      @relation("DepartmentHasRoleAccess")
 }
@@ -47,8 +48,9 @@ model RoleAccess {
   departmentId String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
-  access       Access?     @relation("RoleAccessHasAccess", fields: [accessId], references: [id])
-  department   Department? @relation("DepartmentHasRoleAccess", fields: [departmentId], references: [id])
+  
+  access     Access?     @relation("RoleAccessHasAccess", fields: [accessId], references: [id])
+  department Department? @relation("DepartmentHasRoleAccess", fields: [departmentId], references: [id])
 }
 
 model Access {
@@ -60,6 +62,7 @@ model Access {
   print      Boolean?     @default(false)
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
+  
   roleAccess RoleAccess[] @relation("RoleAccessHasAccess")
 }
 
@@ -77,6 +80,7 @@ model User {
   createdAt                DateTime           @default(now())
   updatedAt                DateTime           @updatedAt
   lastLoginAt              DateTime?
+  
   addressesCreated         Address[]          @relation("AddressWasCreatedByUser")
   bankDetailsCreated       BankDetails[]      @relation("CompanyBankDetailsWasCreatedByUser")
   branchesCreated          Branch[]           @relation("BranchWasCreatedByUser")
@@ -115,6 +119,7 @@ model Address {
   createdById      String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+  
   district         City?             @relation("AddressHasCity", fields: [cityId], references: [id])
   country          Country?          @relation("AddressHasCountry", fields: [countryId], references: [id])
   createdBy        User?             @relation("AddressWasCreatedByUser", fields: [createdById], references: [id])
@@ -134,6 +139,7 @@ model Country {
   phoneCode String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  
   addresses Address[] @relation("AddressHasCountry")
   states    State[]   @relation("CountryHasStates")
 }
@@ -144,6 +150,7 @@ model State {
   countryId String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  
   addresses Address[] @relation("AddressHasState")
   cities    City[]    @relation("StateHasCities")
   country   Country   @relation("CountryHasStates", fields: [countryId], references: [id])
@@ -155,6 +162,7 @@ model City {
   stateId   String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  
   addresses Address[] @relation("AddressHasCity")
   state     State     @relation("StateHasCities", fields: [stateId], references: [id])
   rtos      Rto[]     @relation("CityHasRtos")
@@ -167,7 +175,8 @@ model Rto {
   cityId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  city      City     @relation("CityHasRtos", fields: [cityId], references: [id])
+  
+  city City @relation("CityHasRtos", fields: [cityId], references: [id])
 }
 
 model Manufacturer {
@@ -182,6 +191,7 @@ model Manufacturer {
   createdById         String?
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
+  
   frameNumbers        FrameNumber[]   @relation("FrameNumberHasManufacturer")
   address             Address?        @relation("ManufacturerHasAddress", fields: [addressId], references: [id], onDelete: Cascade)
   createdBy           User?           @relation("ManufacturerWasCreatedBy", fields: [createdById], references: [id])
@@ -201,6 +211,7 @@ model VehicleMaster {
   createdById    String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  
   images         Image[]        @relation("VehicleMasterHasImage")
   multiVehicles  MultiVehicle[] @relation("MultiVehicleHasVehicle")
   createdBy      User?          @relation("VehicleMasterWasCreatedBy", fields: [createdById], references: [id])
@@ -218,6 +229,7 @@ model Image {
   createdById     String?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  
   createdBy       User?          @relation("ImageWasCreatedBy", fields: [createdById], references: [id])
   vehicleMaster   VehicleMaster? @relation("VehicleMasterHasImage", fields: [vehicleMasterId], references: [id], onDelete: Cascade)
   vehicleStockItems VehicleStockItem[] @relation("ItemHasColor")
@@ -247,9 +259,10 @@ model VehiclePrice {
   createdById        String?
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
-  colors             VehicleColor[] @relation("VehiclePriceHasColors")
-  createdBy          User?          @relation("VehiclePriceWasCreatedBy", fields: [createdById], references: [id])
-  vehicleMaster      VehicleMaster? @relation("VehiclePriceBelongsToVehicleMaster", fields: [vehicleMasterId], references: [id])
+  
+  colors         VehicleColor[] @relation("VehiclePriceHasColors")
+  createdBy      User?          @relation("VehiclePriceWasCreatedBy", fields: [createdById], references: [id])
+  vehicleMaster  VehicleMaster? @relation("VehiclePriceBelongsToVehicleMaster", fields: [vehicleMasterId], references: [id])
 }
 
 model VehicleColor {
@@ -257,6 +270,7 @@ model VehicleColor {
   colorId        String
   colorName      String?
   vehiclePriceId String?
+  
   vehiclePrice   VehiclePrice? @relation("VehiclePriceHasColors", fields: [vehiclePriceId], references: [id])
 }
 
@@ -285,6 +299,7 @@ model PartsMaster {
   createdById       String?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
+  
   vehicleSuit       MultiVehicle[] @relation("PartsMasterHasMultiVehicle")
   createdBy         User?          @relation("PartsMasterWasCreatedBy", fields: [createdById], references: [id])
   hsn               Hsn?           @relation("PartsMasterHasHSN", fields: [hsnId], references: [id])
@@ -298,6 +313,7 @@ model MultiVehicle {
   createdById   String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  
   createdBy     User?          @relation("MultiVehicleWasCreatedByUser", fields: [createdById], references: [id])
   partsMaster   PartsMaster?   @relation("PartsMasterHasMultiVehicle", fields: [partsMasterId], references: [id], onDelete: Cascade)
   vehicle       VehicleMaster? @relation("MultiVehicleHasVehicle", fields: [vehicleId], references: [id])
@@ -314,6 +330,7 @@ model Hsn {
   createdById  String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  
   createdBy    User?         @relation("HsnWasCreatedBy", fields: [createdById], references: [id])
   partsMasters PartsMaster[] @relation("PartsMasterHasHSN")
 }
@@ -327,12 +344,14 @@ model Dealer {
   email           String?
   remarks         String?
   addressId       String?
+  shippingAddressId String?
   createdById     String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  
   address         Address?  @relation("DealerHasAddress", fields: [addressId], references: [id], onDelete: Cascade)
+  shippingAddress Address?  @relation("DealerHasShippingAddress", fields: [shippingAddressId], references: [id], onDelete: Cascade)
   createdBy       User?     @relation("DealerWasCreatedBy", fields: [createdById], references: [id])
-  shippingAddress Address[] @relation("DealerHasShippingAddress")
 }
 
 model EmployeeProfile {
@@ -353,6 +372,7 @@ model EmployeeProfile {
   aadhaarNumber  String?
   drivingLicense String?
   panNumber      String?
+  
   documents      EmployeeDocument[] @relation("UserHasUserDocument")
   address        Address?           @relation("UserProfileHasAddress", fields: [addressId], references: [id], onDelete: Cascade)
   bankDetails    BankDetails?       @relation("UserProfileHasBankDetails", fields: [bankDetailsId], references: [id], onDelete: Cascade)
@@ -371,6 +391,7 @@ model EmployeeDocument {
   createdById   String?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
+  
   createdBy     User?            @relation("UserDocumentWasCreatedBy", fields: [createdById], references: [id])
   files         File?            @relation("UserDocumentHasFile", fields: [filesId], references: [id], onDelete: Cascade)
   userProfile   EmployeeProfile? @relation("UserHasUserDocument", fields: [userProfileId], references: [id])
@@ -384,6 +405,7 @@ model File {
   createdById       String?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+  
   employeeDocuments EmployeeDocument[] @relation("UserDocumentHasFile")
   createdBy         User?              @relation("FileWasCreatedBy", fields: [createdById], references: [id])
 }
@@ -403,6 +425,7 @@ model Branch {
   updatedAt        DateTime          @updatedAt
   lat              Float?
   lon              Float?
+  
   address          Address?          @relation("BranchHasAddress", fields: [addressId], references: [id], onDelete: Cascade)
   company          Company?          @relation("CompanyHasManyBranch", fields: [companyId], references: [id], onDelete: Cascade)
   createdBy        User?             @relation("BranchWasCreatedByUser", fields: [createdById], references: [id])
@@ -421,6 +444,7 @@ model BranchContacts {
   branchId  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
   branch    Branch?  @relation("BranchHasManyBranchContacts", fields: [branchId], references: [id], onDelete: Cascade)
 }
 
@@ -435,6 +459,7 @@ model BankDetails {
   createdById      String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+  
   createdBy        User?             @relation("CompanyBankDetailsWasCreatedByUser", fields: [createdById], references: [id])
   employeeProfiles EmployeeProfile[] @relation("UserProfileHasBankDetails")
 }
@@ -452,6 +477,7 @@ model IdCreation {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   module        String?
+  
   branch        Branch?  @relation("IdCreationHasBranch", fields: [branchId], references: [id], onDelete: Cascade)
   createdBy     User?    @relation("CreationWasCreatedBy", fields: [createdById], references: [id])
 }
@@ -466,22 +492,9 @@ model FrameNumber {
   createdById    String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  
   createdBy      User?         @relation("FrameNumberWasCreatedByUser", fields: [createdById], references: [id])
   manufacturer   Manufacturer? @relation("FrameNumberHasManufacturer", fields: [manufacturerId], references: [id])
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model VehicleMasterHasImage {
-  A String?
-  B String?
-
-  @@map("_VehicleMasterHasImage")
-  @@ignore
-}
-
-enum AccType {
-  SAVINGS
-  CURRENT
 }
 
 model VehicleStockInward {
@@ -527,4 +540,17 @@ model VehicleStockItem {
   inward          VehicleStockInward  @relation("InwardHasItems", fields: [inwardId], references: [id], onDelete: Cascade)
   vehicleMaster   VehicleMaster?      @relation("ItemHasVehicle", fields: [vehicleMasterId], references: [id])
   image           Image?              @relation("ItemHasColor", fields: [imageId], references: [id])
+}
+
+enum AccType {
+  SAVINGS
+  CURRENT
+}
+
+model VehicleMasterHasImage {
+  A String?
+  B String?
+
+  @@map("_VehicleMasterHasImage")
+  @@ignore
 }
