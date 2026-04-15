@@ -25,10 +25,10 @@ export declare class RoleAccessService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        departmentId: string | null;
         master: string | null;
         subModule: string | null;
         accessId: string | null;
-        departmentId: string | null;
     }>;
     static getAll(departmentId?: string): Promise<({
         access: {
@@ -45,10 +45,10 @@ export declare class RoleAccessService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        departmentId: string | null;
         master: string | null;
         subModule: string | null;
         accessId: string | null;
-        departmentId: string | null;
     })[]>;
     static getById(id: string): Promise<({
         access: {
@@ -65,10 +65,10 @@ export declare class RoleAccessService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        departmentId: string | null;
         master: string | null;
         subModule: string | null;
         accessId: string | null;
-        departmentId: string | null;
     }) | null>;
     static delete(id: string): Promise<{
         deleted: boolean;

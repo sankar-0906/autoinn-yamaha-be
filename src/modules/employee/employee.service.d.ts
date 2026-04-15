@@ -1,6 +1,18 @@
 export declare class EmployeeService {
     static getAll(): Promise<({
         profile: ({
+            bankDetails: {
+                id: string;
+                createdById: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                name: string | null;
+                accountNumber: string | null;
+                accountName: string | null;
+                ifsc: string | null;
+                accountType: import("@prisma/client").$Enums.AccType | null;
+                accountBalance: number;
+            } | null;
             department: {
                 id: string;
                 createdById: string | null;
@@ -26,36 +38,24 @@ export declare class EmployeeService {
                 lon: number | null;
                 companyId: string | null;
             }[];
-            bankDetails: {
-                id: string;
-                createdById: string | null;
-                createdAt: Date;
-                updatedAt: Date;
-                name: string | null;
-                accountNumber: string | null;
-                accountName: string | null;
-                ifsc: string | null;
-                accountType: import("@prisma/client").$Enums.AccType | null;
-                accountBalance: number;
-            } | null;
         } & {
             id: string;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
-            departmentId: string | null;
-            employeeName: string | null;
-            fatherName: string | null;
-            dateOfBirth: Date | null;
-            bloodGroup: string | null;
-            aadhaarNumber: string | null;
-            panNumber: string | null;
-            drivingLicense: string | null;
-            dateOfJoining: Date | null;
-            employeeId: string | null;
+            userId: string;
             addressId: string | null;
             bankDetailsId: string | null;
-            userId: string;
+            bloodGroup: string | null;
+            dateOfBirth: Date | null;
+            dateOfJoining: Date | null;
+            departmentId: string | null;
+            employeeId: string | null;
+            employeeName: string | null;
+            fatherName: string | null;
+            aadhaarNumber: string | null;
+            drivingLicense: string | null;
+            panNumber: string | null;
         }) | null;
     } & {
         id: string;
@@ -75,6 +75,18 @@ export declare class EmployeeService {
     static getCount(): Promise<number>;
     static getById(id: string): Promise<({
         profile: ({
+            bankDetails: {
+                id: string;
+                createdById: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                name: string | null;
+                accountNumber: string | null;
+                accountName: string | null;
+                ifsc: string | null;
+                accountType: import("@prisma/client").$Enums.AccType | null;
+                accountBalance: number;
+            } | null;
             department: {
                 id: string;
                 createdById: string | null;
@@ -100,36 +112,24 @@ export declare class EmployeeService {
                 lon: number | null;
                 companyId: string | null;
             }[];
-            bankDetails: {
-                id: string;
-                createdById: string | null;
-                createdAt: Date;
-                updatedAt: Date;
-                name: string | null;
-                accountNumber: string | null;
-                accountName: string | null;
-                ifsc: string | null;
-                accountType: import("@prisma/client").$Enums.AccType | null;
-                accountBalance: number;
-            } | null;
         } & {
             id: string;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
-            departmentId: string | null;
-            employeeName: string | null;
-            fatherName: string | null;
-            dateOfBirth: Date | null;
-            bloodGroup: string | null;
-            aadhaarNumber: string | null;
-            panNumber: string | null;
-            drivingLicense: string | null;
-            dateOfJoining: Date | null;
-            employeeId: string | null;
+            userId: string;
             addressId: string | null;
             bankDetailsId: string | null;
-            userId: string;
+            bloodGroup: string | null;
+            dateOfBirth: Date | null;
+            dateOfJoining: Date | null;
+            departmentId: string | null;
+            employeeId: string | null;
+            employeeName: string | null;
+            fatherName: string | null;
+            aadhaarNumber: string | null;
+            drivingLicense: string | null;
+            panNumber: string | null;
         }) | null;
     } & {
         id: string;
@@ -148,6 +148,18 @@ export declare class EmployeeService {
     }) | null>;
     static create(data: any): Promise<{
         profile: ({
+            bankDetails: {
+                id: string;
+                createdById: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                name: string | null;
+                accountNumber: string | null;
+                accountName: string | null;
+                ifsc: string | null;
+                accountType: import("@prisma/client").$Enums.AccType | null;
+                accountBalance: number;
+            } | null;
             department: {
                 id: string;
                 createdById: string | null;
@@ -173,36 +185,24 @@ export declare class EmployeeService {
                 lon: number | null;
                 companyId: string | null;
             }[];
-            bankDetails: {
-                id: string;
-                createdById: string | null;
-                createdAt: Date;
-                updatedAt: Date;
-                name: string | null;
-                accountNumber: string | null;
-                accountName: string | null;
-                ifsc: string | null;
-                accountType: import("@prisma/client").$Enums.AccType | null;
-                accountBalance: number;
-            } | null;
         } & {
             id: string;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
-            departmentId: string | null;
-            employeeName: string | null;
-            fatherName: string | null;
-            dateOfBirth: Date | null;
-            bloodGroup: string | null;
-            aadhaarNumber: string | null;
-            panNumber: string | null;
-            drivingLicense: string | null;
-            dateOfJoining: Date | null;
-            employeeId: string | null;
+            userId: string;
             addressId: string | null;
             bankDetailsId: string | null;
-            userId: string;
+            bloodGroup: string | null;
+            dateOfBirth: Date | null;
+            dateOfJoining: Date | null;
+            departmentId: string | null;
+            employeeId: string | null;
+            employeeName: string | null;
+            fatherName: string | null;
+            aadhaarNumber: string | null;
+            drivingLicense: string | null;
+            panNumber: string | null;
         }) | null;
     } & {
         id: string;
@@ -221,6 +221,18 @@ export declare class EmployeeService {
     }>;
     static update(id: string, data: any): Promise<{
         profile: ({
+            bankDetails: {
+                id: string;
+                createdById: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                name: string | null;
+                accountNumber: string | null;
+                accountName: string | null;
+                ifsc: string | null;
+                accountType: import("@prisma/client").$Enums.AccType | null;
+                accountBalance: number;
+            } | null;
             department: {
                 id: string;
                 createdById: string | null;
@@ -246,36 +258,24 @@ export declare class EmployeeService {
                 lon: number | null;
                 companyId: string | null;
             }[];
-            bankDetails: {
-                id: string;
-                createdById: string | null;
-                createdAt: Date;
-                updatedAt: Date;
-                name: string | null;
-                accountNumber: string | null;
-                accountName: string | null;
-                ifsc: string | null;
-                accountType: import("@prisma/client").$Enums.AccType | null;
-                accountBalance: number;
-            } | null;
         } & {
             id: string;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
-            departmentId: string | null;
-            employeeName: string | null;
-            fatherName: string | null;
-            dateOfBirth: Date | null;
-            bloodGroup: string | null;
-            aadhaarNumber: string | null;
-            panNumber: string | null;
-            drivingLicense: string | null;
-            dateOfJoining: Date | null;
-            employeeId: string | null;
+            userId: string;
             addressId: string | null;
             bankDetailsId: string | null;
-            userId: string;
+            bloodGroup: string | null;
+            dateOfBirth: Date | null;
+            dateOfJoining: Date | null;
+            departmentId: string | null;
+            employeeId: string | null;
+            employeeName: string | null;
+            fatherName: string | null;
+            aadhaarNumber: string | null;
+            drivingLicense: string | null;
+            panNumber: string | null;
         }) | null;
     } & {
         id: string;

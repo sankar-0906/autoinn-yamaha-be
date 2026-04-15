@@ -33,10 +33,10 @@ export declare class DepartmentService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            departmentId: string | null;
             master: string | null;
             subModule: string | null;
             accessId: string | null;
-            departmentId: string | null;
         })[];
     } & {
         id: string;
@@ -81,10 +81,10 @@ export declare class DepartmentService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            departmentId: string | null;
             master: string | null;
             subModule: string | null;
             accessId: string | null;
-            departmentId: string | null;
         })[];
     } & {
         id: string;
@@ -111,10 +111,10 @@ export declare class DepartmentService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            departmentId: string | null;
             master: string | null;
             subModule: string | null;
             accessId: string | null;
-            departmentId: string | null;
         })[];
     } & {
         id: string;
@@ -141,10 +141,10 @@ export declare class DepartmentService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            departmentId: string | null;
             master: string | null;
             subModule: string | null;
             accessId: string | null;
-            departmentId: string | null;
         })[];
     } & {
         id: string;

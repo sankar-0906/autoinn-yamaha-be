@@ -42,7 +42,7 @@ export declare class DealerService {
             stateId: string | null;
             countryId: string | null;
             pincode: string | null;
-        }[];
+        } | null;
     } & {
         id: string;
         email: string | null;
@@ -55,6 +55,7 @@ export declare class DealerService {
         remarks: string | null;
         dealerType: string | null;
         GSTIN: string | null;
+        shippingAddressId: string | null;
     })[]>;
     static getById(id: string): Promise<({
         createdBy: {
@@ -99,7 +100,7 @@ export declare class DealerService {
             stateId: string | null;
             countryId: string | null;
             pincode: string | null;
-        }[];
+        } | null;
     } & {
         id: string;
         email: string | null;
@@ -112,6 +113,7 @@ export declare class DealerService {
         remarks: string | null;
         dealerType: string | null;
         GSTIN: string | null;
+        shippingAddressId: string | null;
     }) | null>;
     static create(data: any): Promise<{
         address: {
@@ -141,7 +143,7 @@ export declare class DealerService {
             stateId: string | null;
             countryId: string | null;
             pincode: string | null;
-        }[];
+        } | null;
     } & {
         id: string;
         email: string | null;
@@ -154,6 +156,7 @@ export declare class DealerService {
         remarks: string | null;
         dealerType: string | null;
         GSTIN: string | null;
+        shippingAddressId: string | null;
     }>;
     static update(id: string, data: any): Promise<({
         address: {
@@ -183,7 +186,7 @@ export declare class DealerService {
             stateId: string | null;
             countryId: string | null;
             pincode: string | null;
-        }[];
+        } | null;
     } & {
         id: string;
         email: string | null;
@@ -196,6 +199,7 @@ export declare class DealerService {
         remarks: string | null;
         dealerType: string | null;
         GSTIN: string | null;
+        shippingAddressId: string | null;
     }) | null>;
     static delete(id: string): Promise<{
         id: string;
@@ -209,6 +213,7 @@ export declare class DealerService {
         remarks: string | null;
         dealerType: string | null;
         GSTIN: string | null;
+        shippingAddressId: string | null;
     }>;
 }
 //# sourceMappingURL=dealer.service.d.ts.map

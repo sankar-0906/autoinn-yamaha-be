@@ -14,17 +14,32 @@ export class AuthService {
         return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     }
     static async login(phone, pass) {
-        const user = await prisma.user.findFirst({
-            where: { phone },
+        const users = await prisma.user.findMany({
+            where: {
+                phone,
+                status: true
+            },
             include: { profile: true }
         });
-        if (!user || !user.password) {
+        if (users.length === 0) {
+            console.log('Login Error: No active user found with this phone');
             throw new Error('User not found');
         }
-        const isValid = await this.comparePassword(pass, user.password);
-        if (!isValid) {
+        let authenticatedUser = null;
+        for (const user of users) {
+            if (!user.password)
+                continue;
+            const isValid = await this.comparePassword(pass, user.password);
+            if (isValid) {
+                authenticatedUser = user;
+                break;
+            }
+        }
+        if (!authenticatedUser) {
+            console.log('Login Error: Password mismatch for all matching phone records');
             throw new Error('Invalid credentials');
         }
+        const user = authenticatedUser;
         const token = this.generateToken({ id: user.id, phone: user.phone });
         // Update last login
         await prisma.user.update({
