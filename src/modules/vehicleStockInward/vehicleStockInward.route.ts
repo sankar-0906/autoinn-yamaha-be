@@ -14,6 +14,14 @@ router.use((req, res, next) => {
 router.get('/', VehicleStockInwardController.getAll);
 router.post('/process-pdf', upload.single('pdf'), VehicleStockInwardController.processPdf as any);
 router.post('/', VehicleStockInwardController.create);
+
+// Static GET routes must come before dynamic /:id routes
+router.get('/lookup-image', VehicleStockInwardController.lookupVehicleImage);
+
+// Other static routes
+router.post('/recover-data', VehicleStockInwardController.recoverVehicleData);
+
+// Dynamic routes
 router.get('/:id', VehicleStockInwardController.getById);
 router.put('/:id', VehicleStockInwardController.update);
 router.delete('/:id', VehicleStockInwardController.delete);

@@ -33,7 +33,11 @@ export class PartsMasterService {
                     }))
                 } : undefined
             },
-            include: { vehicleSuit: true }
+            include: {
+                hsn: true,
+                manufacturer: true,
+                vehicleSuit: true
+            }
         });
     }
 
@@ -69,7 +73,11 @@ export class PartsMasterService {
 
             return tx.partsMaster.findUnique({
                 where: { id },
-                include: { vehicleSuit: true }
+                include: {
+                    hsn: true,
+                    manufacturer: true,
+                    vehicleSuit: true
+                }
             });
         });
     }

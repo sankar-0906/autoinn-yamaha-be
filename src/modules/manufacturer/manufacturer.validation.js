@@ -5,6 +5,7 @@ export const createManufacturerSchema = Joi.object({
     email: Joi.string().email().required(),
     gst: Joi.string().required(),
     vehicleManufacturer: Joi.boolean().default(false),
+    logo: Joi.string().optional().allow(null, ''),
     // Address fields
     line1: Joi.string().required(),
     line2: Joi.string().optional().allow(null, ''),
@@ -21,6 +22,7 @@ export const updateManufacturerSchema = Joi.object({
     email: Joi.string().email().optional(),
     gst: Joi.string().optional(),
     vehicleManufacturer: Joi.boolean().optional(),
+    logo: Joi.string().optional().allow(null, ''),
     // Address fields
     line1: Joi.string().optional(),
     line2: Joi.string().optional().allow(null, ''),

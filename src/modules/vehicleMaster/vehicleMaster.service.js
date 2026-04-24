@@ -1,44 +1,90 @@
 import prisma from '../../utils/prisma.js';
 export class VehicleMasterService {
     static async getAll() {
-        return prisma.vehicleMaster.findMany({
-            include: { manufacturer: true, images: true, prices: true }
+        const vehicles = await prisma.vehicleMaster.findMany({
+            include: {
+                manufacturer: true,
+                images: true,
+                prices: {
+                    include: { colors: true }
+                },
+                files: true,
+                hsn: true,
+                services: true
+            }
         });
+        return vehicles.map(v => this.transformResponse(v));
+    }
+    static transformResponse(vehicle) {
+        if (!vehicle)
+            return null;
+        return {
+            ...vehicle,
+            image: vehicle.images || [],
+            price: (vehicle.prices || []).map((p) => ({
+                ...p,
+                colors: p.colors || []
+            })),
+            file: vehicle.files || [],
+            services: vehicle.services || []
+        };
     }
     static async getById(id) {
-        return prisma.vehicleMaster.findUnique({
+        const vehicle = await prisma.vehicleMaster.findUnique({
             where: { id },
-            include: { manufacturer: true, images: true, prices: true }
+            include: {
+                manufacturer: true,
+                images: true,
+                prices: {
+                    include: { colors: true }
+                },
+                files: true,
+                hsn: true,
+                services: true
+            }
         });
+        return this.transformResponse(vehicle);
     }
     static async create(data) {
-        const { images, ...rest } = data;
-        return prisma.vehicleMaster.create({
+        const { images, files, manufacturerId, createdById, ...rest } = data;
+        const vehicle = await prisma.vehicleMaster.create({
             data: {
                 ...rest,
+                manufacturer: manufacturerId ? { connect: { id: manufacturerId } } : undefined,
+                createdBy: createdById ? { connect: { id: createdById } } : undefined,
                 images: images ? {
                     create: images.map((img) => ({
                         color: img.color,
                         code: img.code,
                         url: img.url,
-                        createdById: rest.createdById
+                        createdById: createdById
+                    }))
+                } : undefined,
+                files: files ? {
+                    create: files.map((file) => ({
+                        name: file.name,
+                        url: file.url,
+                        fileType: file.fileType,
+                        createdById: createdById
                     }))
                 } : undefined
             },
-            include: { manufacturer: true, images: true, prices: true }
+            include: { manufacturer: true, images: true, prices: true, files: true }
         });
+        return this.transformResponse(vehicle);
     }
     static async update(id, data) {
-        const { images, ...rest } = data;
+        const { images, files, manufacturerId, createdById, ...rest } = data;
         // Update the main record first
-        const updated = await prisma.vehicleMaster.update({
+        await prisma.vehicleMaster.update({
             where: { id },
-            data: rest,
-            include: { images: true }
+            data: {
+                ...rest,
+                manufacturer: manufacturerId ? { connect: { id: manufacturerId } } : undefined,
+                createdBy: createdById ? { connect: { id: createdById } } : undefined,
+            }
         });
         if (images) {
-            // Simple sync: delete existing images and recreate
-            // In a production app, we might want to preserve IDs for unchanged images
             await prisma.image.deleteMany({
                 where: { vehicleMasterId: id }
             });
@@ -50,21 +96,72 @@ export class VehicleMasterService {
                             color: img.color,
                             code: img.code,
                             url: img.url,
-                            createdById: rest.createdById
+                            createdById: createdById
                         }))
                     }
                 }
             });
         }
-        return prisma.vehicleMaster.findUnique({
+        if (files) {
+            await prisma.file.deleteMany({
+                where: { vehicleMasterId: id }
+            });
+            await prisma.vehicleMaster.update({
+                where: { id },
+                data: {
+                    files: {
+                        create: files.map((file) => ({
+                            name: file.name,
+                            url: file.url,
+                            fileType: file.fileType,
+                            createdById: createdById
+                        }))
+                    }
+                }
+            });
+        }
+        const vehicle = await prisma.vehicleMaster.findUnique({
             where: { id },
-            include: { manufacturer: true, images: true, prices: true }
+            include: {
+                manufacturer: true,
+                images: true,
+                prices: {
+                    include: { colors: true }
+                },
+                files: true,
+                hsn: true,
+                services: true
+            }
         });
+        return this.transformResponse(vehicle);
     }
     static async delete(id) {
         return prisma.vehicleMaster.delete({
             where: { id }
         });
+    }
+    static async getUniqueModelCodes() {
+        const models = await prisma.vehicleMaster.findMany({
+            select: { modelCode: true },
+            distinct: ['modelCode'],
+            where: { modelCode: { not: null } }
+        });
+        return models.map(m => m.modelCode).sort();
+    }
+    static async getColorsByModelCode(modelCode) {
+        const vehicle = await prisma.vehicleMaster.findFirst({
+            where: { modelCode },
+            include: { images: true }
+        });
+        if (!vehicle || !vehicle.images)
+            return [];
+        // Return unique color codes/names from the Images mapping
+        const colors = vehicle.images.map(img => ({
+            code: img.code,
+            color: img.color
+        }));
+        // Deduplicate by code
+        return Array.from(new Map(colors.map(item => [item['code'], item])).values());
     }
 }
 //# sourceMappingURL=vehicleMaster.service.js.map

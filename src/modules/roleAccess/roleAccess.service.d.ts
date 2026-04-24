@@ -12,62 +12,62 @@ export declare class RoleAccessService {
         };
     }): Promise<{
         access: {
-            create: boolean | null;
-            update: boolean | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            create: boolean | null;
+            update: boolean | null;
             delete: boolean | null;
             read: boolean | null;
             print: boolean | null;
         } | null;
     } & {
         id: string;
+        subModule: string | null;
         createdAt: Date;
         updatedAt: Date;
         departmentId: string | null;
         master: string | null;
-        subModule: string | null;
         accessId: string | null;
     }>;
     static getAll(departmentId?: string): Promise<({
         access: {
-            create: boolean | null;
-            update: boolean | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            create: boolean | null;
+            update: boolean | null;
             delete: boolean | null;
             read: boolean | null;
             print: boolean | null;
         } | null;
     } & {
         id: string;
+        subModule: string | null;
         createdAt: Date;
         updatedAt: Date;
         departmentId: string | null;
         master: string | null;
-        subModule: string | null;
         accessId: string | null;
     })[]>;
     static getById(id: string): Promise<({
         access: {
-            create: boolean | null;
-            update: boolean | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            create: boolean | null;
+            update: boolean | null;
             delete: boolean | null;
             read: boolean | null;
             print: boolean | null;
         } | null;
     } & {
         id: string;
+        subModule: string | null;
         createdAt: Date;
         updatedAt: Date;
         departmentId: string | null;
         master: string | null;
-        subModule: string | null;
         accessId: string | null;
     }) | null>;
     static delete(id: string): Promise<{

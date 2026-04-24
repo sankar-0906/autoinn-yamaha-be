@@ -43,22 +43,24 @@ export class DepartmentService {
             }
         }));
 
-        return prisma.department.upsert({
-            where: { role },
-            create: {
+        const existing = await prisma.department.findUnique({
+            where: { role }
+        });
+
+        if (existing) {
+            throw new Error('Role already exists');
+        }
+
+        const createDepartment = await prisma.department.create({
+            data: {
                 role,
                 ...rest,
                 roleAccess: roleAccessCreate ? { create: roleAccessCreate } : undefined
             },
-            update: {
-                ...rest,
-                roleAccess: roleAccessCreate ? {
-                    deleteMany: {},
-                    create: roleAccessCreate
-                } : undefined
-            },
             include: { roleAccess: { include: { access: true } } },
         });
+
+        return createDepartment;
     }
 
     static async update(id: string, data: any) {

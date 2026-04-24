@@ -2,6 +2,7 @@ export declare class ManufacturerService {
     static getAll(): Promise<({
         address: {
             id: string;
+            branchId: string | null;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
@@ -13,23 +14,25 @@ export declare class ManufacturerService {
             stateId: string | null;
             countryId: string | null;
             pincode: string | null;
+            dealerShippingId: string | null;
         } | null;
     } & {
         id: string;
-        email: string | null;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         name: string | null;
+        code: string | null;
+        email: string | null;
         addressId: string | null;
         gst: string | null;
         logo: string | null;
-        code: string | null;
         vehicleManufacturer: boolean | null;
     })[]>;
     static getById(id: string): Promise<({
         address: {
             id: string;
+            branchId: string | null;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
@@ -41,18 +44,19 @@ export declare class ManufacturerService {
             stateId: string | null;
             countryId: string | null;
             pincode: string | null;
+            dealerShippingId: string | null;
         } | null;
     } & {
         id: string;
-        email: string | null;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         name: string | null;
+        code: string | null;
+        email: string | null;
         addressId: string | null;
         gst: string | null;
         logo: string | null;
-        code: string | null;
         vehicleManufacturer: boolean | null;
     }) | null>;
     static create(data: any): Promise<{
@@ -81,6 +85,7 @@ export declare class ManufacturerService {
             } | null;
         } & {
             id: string;
+            branchId: string | null;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
@@ -92,18 +97,19 @@ export declare class ManufacturerService {
             stateId: string | null;
             countryId: string | null;
             pincode: string | null;
+            dealerShippingId: string | null;
         }) | null;
     } & {
         id: string;
-        email: string | null;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         name: string | null;
+        code: string | null;
+        email: string | null;
         addressId: string | null;
         gst: string | null;
         logo: string | null;
-        code: string | null;
         vehicleManufacturer: boolean | null;
     }>;
     static update(id: string, data: any): Promise<{
@@ -132,6 +138,7 @@ export declare class ManufacturerService {
             } | null;
         } & {
             id: string;
+            branchId: string | null;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
@@ -143,31 +150,32 @@ export declare class ManufacturerService {
             stateId: string | null;
             countryId: string | null;
             pincode: string | null;
+            dealerShippingId: string | null;
         }) | null;
     } & {
         id: string;
-        email: string | null;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         name: string | null;
+        code: string | null;
+        email: string | null;
         addressId: string | null;
         gst: string | null;
         logo: string | null;
-        code: string | null;
         vehicleManufacturer: boolean | null;
     }>;
     static delete(id: string): Promise<{
         id: string;
-        email: string | null;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         name: string | null;
+        code: string | null;
+        email: string | null;
         addressId: string | null;
         gst: string | null;
         logo: string | null;
-        code: string | null;
         vehicleManufacturer: boolean | null;
     }>;
 }

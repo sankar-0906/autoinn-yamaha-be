@@ -6,10 +6,23 @@ export class EmployeeController {
     static async getAll(req, res, next) {
         try {
             const employees = await EmployeeService.getAll();
-            return sendSuccess(res, 'Employees fetched successfully', employees);
+            // Return exact format that autoinn frontend expects
+            return res.json({
+                code: 200,
+                msg: "All users fetched",
+                data: {
+                    count: employees.length,
+                    users: employees,
+                    user: req.user?.id || null
+                }
+            });
         }
         catch (error) {
-            return sendError(res, error.message);
+            return res.json({
+                code: 500,
+                message: "Error getting users",
+                data: error
+            });
         }
     }
     static async getCount(req, res, next) {

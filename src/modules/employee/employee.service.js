@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import prisma from '../../utils/prisma.js';
+import { IdGeneratorService } from '../idGenerator/idGenerator.service.js';
 export class EmployeeService {
     static async getAll() {
         return prisma.user.findMany({
@@ -37,6 +38,9 @@ export class EmployeeService {
     static async create(data) {
         const { password, employeeName, fatherName, dateOfBirth, bloodGroup, departmentId, branchId, aadhaarNumber, panNumber, drivingLicense, dateOfJoining, ifscCode, accountNumber, accountHolder, bankName, ...rest } = data;
         const hashedPassword = await bcrypt.hash(password, 10);
+        // Generate employee ID using IdGenerator
+        const mainBranchId = (branchId && branchId.length > 0) ? branchId[0] : undefined;
+        const generatedEmployeeId = await IdGeneratorService.generateNextId('EMPLOYEE', mainBranchId);
         return prisma.user.create({
             data: {
                 ...rest,
@@ -45,6 +49,7 @@ export class EmployeeService {
                 profile: {
                     create: {
                         employeeName,
+                        employeeId: generatedEmployeeId,
                         fatherName,
                         dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
                         bloodGroup,
@@ -53,7 +58,7 @@ export class EmployeeService {
                         drivingLicense,
                         dateOfJoining: dateOfJoining ? new Date(dateOfJoining) : null,
                         department: departmentId ? { connect: { id: departmentId } } : undefined,
-                        branch: branchId ? { connect: { id: branchId } } : undefined,
+                        branch: (branchId && branchId.length > 0) ? { connect: branchId.map((id) => ({ id })) } : undefined,
                         bankDetails: (ifscCode || accountNumber || accountHolder || bankName) ? {
                             create: {
                                 ifsc: ifscCode,
@@ -94,7 +99,7 @@ export class EmployeeService {
                 drivingLicense,
                 dateOfJoining: dateOfJoining ? new Date(dateOfJoining) : undefined,
                 department: departmentId ? { connect: { id: departmentId } } : undefined,
-                branch: branchId ? { set: { id: branchId } } : undefined,
+                branch: branchId ? { set: branchId.map((id) => ({ id })) } : undefined,
                 bankDetails: (ifscCode || accountNumber || accountHolder || bankName) ? {
                     upsert: {
                         create: {

@@ -1,26 +1,5 @@
 export declare class PartsMasterService {
     static getAll(): Promise<({
-        manufacturer: {
-            id: string;
-            email: string | null;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string | null;
-            addressId: string | null;
-            gst: string | null;
-            logo: string | null;
-            code: string | null;
-            vehicleManufacturer: boolean | null;
-        } | null;
-        vehicleSuit: {
-            id: string;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            vehicleId: string | null;
-            partsMasterId: string | null;
-        }[];
         hsn: {
             id: string;
             createdById: string | null;
@@ -33,15 +12,37 @@ export declare class PartsMasterService {
             cess: number | null;
             description: string | null;
         } | null;
+        manufacturer: {
+            id: string;
+            createdById: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string | null;
+            code: string | null;
+            email: string | null;
+            addressId: string | null;
+            gst: string | null;
+            logo: string | null;
+            vehicleManufacturer: boolean | null;
+        } | null;
+        vehicleSuit: {
+            id: string;
+            createdById: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            vehicleId: string | null;
+            partsMasterId: string | null;
+        }[];
     } & {
-        url: string[];
         id: string;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         manufacturerId: string | null;
         category: string | null;
+        hsnId: string | null;
         color: string | null;
+        url: string[];
         partNumber: string;
         partName: string | null;
         displayName: string | null;
@@ -52,7 +53,6 @@ export declare class PartsMasterService {
         moq: number | null;
         mrp: number | null;
         ndp: number | null;
-        hsnId: string | null;
         wefDate: Date | null;
         partStatus: string | null;
         remarks: string | null;
@@ -60,27 +60,6 @@ export declare class PartsMasterService {
         mainPartNumber: string | null;
     })[]>;
     static getById(id: string): Promise<({
-        manufacturer: {
-            id: string;
-            email: string | null;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string | null;
-            addressId: string | null;
-            gst: string | null;
-            logo: string | null;
-            code: string | null;
-            vehicleManufacturer: boolean | null;
-        } | null;
-        vehicleSuit: {
-            id: string;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            vehicleId: string | null;
-            partsMasterId: string | null;
-        }[];
         hsn: {
             id: string;
             createdById: string | null;
@@ -93,15 +72,37 @@ export declare class PartsMasterService {
             cess: number | null;
             description: string | null;
         } | null;
+        manufacturer: {
+            id: string;
+            createdById: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string | null;
+            code: string | null;
+            email: string | null;
+            addressId: string | null;
+            gst: string | null;
+            logo: string | null;
+            vehicleManufacturer: boolean | null;
+        } | null;
+        vehicleSuit: {
+            id: string;
+            createdById: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            vehicleId: string | null;
+            partsMasterId: string | null;
+        }[];
     } & {
-        url: string[];
         id: string;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         manufacturerId: string | null;
         category: string | null;
+        hsnId: string | null;
         color: string | null;
+        url: string[];
         partNumber: string;
         partName: string | null;
         displayName: string | null;
@@ -112,7 +113,6 @@ export declare class PartsMasterService {
         moq: number | null;
         mrp: number | null;
         ndp: number | null;
-        hsnId: string | null;
         wefDate: Date | null;
         partStatus: string | null;
         remarks: string | null;
@@ -120,6 +120,31 @@ export declare class PartsMasterService {
         mainPartNumber: string | null;
     }) | null>;
     static create(data: any): Promise<{
+        hsn: {
+            id: string;
+            createdById: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            code: string | null;
+            igst: number | null;
+            cgst: number | null;
+            sgst: number | null;
+            cess: number | null;
+            description: string | null;
+        } | null;
+        manufacturer: {
+            id: string;
+            createdById: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string | null;
+            code: string | null;
+            email: string | null;
+            addressId: string | null;
+            gst: string | null;
+            logo: string | null;
+            vehicleManufacturer: boolean | null;
+        } | null;
         vehicleSuit: {
             id: string;
             createdById: string | null;
@@ -129,14 +154,15 @@ export declare class PartsMasterService {
             partsMasterId: string | null;
         }[];
     } & {
-        url: string[];
         id: string;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         manufacturerId: string | null;
         category: string | null;
+        hsnId: string | null;
         color: string | null;
+        url: string[];
         partNumber: string;
         partName: string | null;
         displayName: string | null;
@@ -147,7 +173,6 @@ export declare class PartsMasterService {
         moq: number | null;
         mrp: number | null;
         ndp: number | null;
-        hsnId: string | null;
         wefDate: Date | null;
         partStatus: string | null;
         remarks: string | null;
@@ -155,6 +180,31 @@ export declare class PartsMasterService {
         mainPartNumber: string | null;
     }>;
     static update(id: string, data: any): Promise<({
+        hsn: {
+            id: string;
+            createdById: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            code: string | null;
+            igst: number | null;
+            cgst: number | null;
+            sgst: number | null;
+            cess: number | null;
+            description: string | null;
+        } | null;
+        manufacturer: {
+            id: string;
+            createdById: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string | null;
+            code: string | null;
+            email: string | null;
+            addressId: string | null;
+            gst: string | null;
+            logo: string | null;
+            vehicleManufacturer: boolean | null;
+        } | null;
         vehicleSuit: {
             id: string;
             createdById: string | null;
@@ -164,14 +214,15 @@ export declare class PartsMasterService {
             partsMasterId: string | null;
         }[];
     } & {
-        url: string[];
         id: string;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         manufacturerId: string | null;
         category: string | null;
+        hsnId: string | null;
         color: string | null;
+        url: string[];
         partNumber: string;
         partName: string | null;
         displayName: string | null;
@@ -182,7 +233,6 @@ export declare class PartsMasterService {
         moq: number | null;
         mrp: number | null;
         ndp: number | null;
-        hsnId: string | null;
         wefDate: Date | null;
         partStatus: string | null;
         remarks: string | null;
@@ -190,14 +240,15 @@ export declare class PartsMasterService {
         mainPartNumber: string | null;
     }) | null>;
     static delete(id: string): Promise<{
-        url: string[];
         id: string;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         manufacturerId: string | null;
         category: string | null;
+        hsnId: string | null;
         color: string | null;
+        url: string[];
         partNumber: string;
         partName: string | null;
         displayName: string | null;
@@ -208,7 +259,6 @@ export declare class PartsMasterService {
         moq: number | null;
         mrp: number | null;
         ndp: number | null;
-        hsnId: string | null;
         wefDate: Date | null;
         partStatus: string | null;
         remarks: string | null;

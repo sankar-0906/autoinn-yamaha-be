@@ -5,5 +5,7 @@ export declare class VehicleMasterController {
     static create(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>>>;
     static update(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>>>;
     static delete(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>>>;
+    static getUniqueModels(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    static getColorsByModel(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 }
 //# sourceMappingURL=vehicleMaster.controller.d.ts.map

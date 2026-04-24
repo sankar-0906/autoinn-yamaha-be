@@ -5,6 +5,7 @@ interface VehicleRow {
     chassisNo: string | null;
     engineNo: string | null;
     colorCode: string | null;
+    mfgDate?: Date | null;
 }
 interface ExtractedInward {
     'NAME': string | null;
@@ -26,15 +27,18 @@ interface ExtractedInward {
 }
 export declare class VehicleStockInwardService {
     static processPdf(filePath: string): Promise<ExtractedInward>;
-    private static extractTextWithOCR;
-    private static extractDataFromText;
-    private static extractVehicleTable;
-    private static extractVehicleTableAlternative;
+    private static extractViaRegex;
+    static createHierarchical(data: any, createdById?: string, branchId?: string): Promise<any>;
     static create(data: any, createdById?: string, branchId?: string): Promise<any>;
+    static transformHierarchicalToFlat(hierarchicalData: any): any;
     static getAll(query: any): Promise<any>;
     static getById(id: string): Promise<any>;
     static update(id: string, data: any): Promise<any>;
+    private static updateHierarchical;
     static delete(id: string): Promise<any>;
+    static lookupVehicleImage(modelCode: string, colorCode: string): Promise<any>;
+    private static extractViaOCR;
+    private static ocrWithRotationRetry;
 }
 export {};
 //# sourceMappingURL=vehicleStockInward.service.d.ts.map

@@ -41,5 +41,40 @@ export class FrameNumberService {
             where: { id }
         });
     }
+    static async decodeChassisNo(chassisNo, manufacturerId) {
+        if (!chassisNo || chassisNo.length < 10 || !manufacturerId)
+            return null;
+        const monthChar = chassisNo.charAt(8).toUpperCase(); // Position 9
+        const yearChar = chassisNo.charAt(9).toUpperCase(); // Position 10
+        const [monthRecord, yearRecord] = await Promise.all([
+            prisma.frameNumber.findFirst({
+                where: {
+                    manufacturerId,
+                    position: 9,
+                    inputValue: monthChar
+                }
+            }),
+            prisma.frameNumber.findFirst({
+                where: {
+                    manufacturerId,
+                    position: 10,
+                    inputValue: yearChar
+                }
+            })
+        ]);
+        if (yearRecord && yearRecord.targetValue) {
+            const year = parseInt(yearRecord.targetValue);
+            let month = 0; // Default to January
+            if (monthRecord && monthRecord.targetValue) {
+                const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                const monthIdx = months.indexOf(monthRecord.targetValue.toUpperCase());
+                if (monthIdx !== -1) {
+                    month = monthIdx;
+                }
+            }
+            return new Date(year, month, 1);
+        }
+        return null;
+    }
 }
 //# sourceMappingURL=frameNumber.service.js.map

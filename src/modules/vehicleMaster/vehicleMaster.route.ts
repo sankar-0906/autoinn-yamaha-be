@@ -9,6 +9,8 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', VehicleMasterController.getAll);
+router.get('/models', VehicleMasterController.getUniqueModels);
+router.get('/colors/:modelCode', VehicleMasterController.getColorsByModel);
 router.get('/:id', VehicleMasterController.getById);
 router.post('/', validate(createVehicleMasterSchema), VehicleMasterController.create);
 router.put('/:id', validate(updateVehicleMasterSchema), VehicleMasterController.update);

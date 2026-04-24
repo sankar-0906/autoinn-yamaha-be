@@ -1,343 +1,196 @@
-import prisma from '../../utils/prisma.js';
 import fs from 'fs/promises';
-import path from 'path';
 import { execSync } from 'child_process';
-import { createWorker } from 'tesseract.js';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const pdfParseLib = require('pdf-parse');
-const pdfParse = pdfParseLib.default ?? pdfParseLib;
-// ─────────────────────────────────────────────────────────────────────────────
-// SERVICE
-// ─────────────────────────────────────────────────────────────────────────────
+import Tesseract from 'tesseract.js';
+import path from 'path';
+import os from 'os';
+import { PDFParse } from 'pdf-parse';
+import prisma from '../../utils/prisma.js';
+import { IdGeneratorService } from '../idGenerator/idGenerator.service.js';
+import { FrameNumberService } from '../frameNumber/frameNumber.service.js';
 export class VehicleStockInwardService {
     // ──────────────────────────────────────────────────────────────────────────
-    // processPdf — Insurance-style PDF parsing with text extraction and OCR fallback
+    // processPdf — reads PDF using pdf-parse and extracts data via Regex
     // ──────────────────────────────────────────────────────────────────────────
     static async processPdf(filePath) {
         console.log(`[VehicleStockInwardService] processPdf called for: ${filePath}`);
-        let text = '';
+        let text = "";
         try {
-            const buffer = await fs.readFile(filePath);
-            const data = await pdfParse(buffer);
-            text = data.text?.trim() || '';
-            console.log('[VehicleStockInwardService] Text extraction successful, length:', text.length);
+            const pdfBuffer = await fs.readFile(filePath);
+            const parser = new PDFParse({ data: pdfBuffer });
+            const pdfData = await parser.getText();
+            text = pdfData.text || "";
+            console.log(`[VehicleStockInwardService] Initial parse text length: ${text.length}`);
         }
-        catch (error) {
-            console.log('[VehicleStockInwardService] Text extraction failed:', error);
+        catch (err) {
+            console.error('[VehicleStockInwardService] pdf-parse failed:', err);
         }
-        // KEY CHANGE: fall through to OCR if text is empty, not only on exception
-        if (!text) {
-            console.log('[VehicleStockInwardService] Text is empty, trying OCR...');
-            try {
-                text = await this.extractTextWithOCR(filePath);
+        // If text is too short or doesn't look like a valid document, try OCR
+        if (text.length < 100 || !text.includes('DISPATCH ADVICE')) {
+            console.log('[VehicleStockInwardService] Attempting OCR fallback...');
+            const ocrText = await VehicleStockInwardService.extractViaOCR(filePath);
+            if (ocrText && ocrText.length > text.length) {
+                text = ocrText;
+                console.log(`[VehicleStockInwardService] OCR successful. New text length: ${text.length}`);
             }
-            catch (ocrError) {
-                console.error('[VehicleStockInwardService] OCR also failed:', ocrError);
-            }
         }
-        console.log('==================== RAW TEXT ====================');
-        console.log(text);
-        console.log('==================================================');
-        const extractedData = this.extractDataFromText(text);
-        console.log('==================== FETCHED PDF DATA ====================');
+        if (text.length < 100) {
+            console.warn('[VehicleStockInwardService] Extremely low text content after all attempts.');
+        }
+        // 1. Identify the core "DISPATCH ADVICE" page content
+        if (!text.includes('DISPATCH ADVICE')) {
+            console.warn('[VehicleStockInwardService] "DISPATCH ADVICE" not found in text. Parsing might be inaccurate.');
+        }
+        const extractedData = VehicleStockInwardService.extractViaRegex(text);
+        console.log('==================== EXTRACTED PDF DATA (REGEX) ====================');
         console.log(JSON.stringify(extractedData, null, 2));
-        console.log('==========================================================');
+        console.log('===================================================================');
         return extractedData;
     }
-    // ──────────────────────────────────────────────────────────────────────────
-    // extractTextWithOCR — OCR fallback for image-based PDFs
-    // ──────────────────────────────────────────────────────────────────────────
-    static async extractTextWithOCR(filePath) {
-        const tempDir = path.dirname(filePath);
-        const uniqueId = path.basename(filePath);
-        // FIX: ensure the file has a .pdf extension for pdftoppm
-        const pdfPath = filePath.endsWith('.pdf') ? filePath : `${filePath}.pdf`;
-        if (!filePath.endsWith('.pdf')) {
-            await fs.copyFile(filePath, pdfPath);
-            console.log(`[VehicleStockInwardService] Copied to: ${pdfPath}`);
+    static extractViaRegex(text) {
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        const getValue = (label, options = {}) => {
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                if (!line)
+                    continue;
+                const match = line.match(label);
+                if (match) {
+                    let val = line.substring(line.indexOf(match[0]) + match[0].length).trim();
+                    val = val.replace(/^[:\.\-\s\\|]+/, '').trim();
+                    if ((!val || val.length < 2) && options.nextLine && i + 1 < lines.length) {
+                        val = lines[i + 1].trim();
+                    }
+                    if (options.stop)
+                        val = val.split(options.stop)[0].trim();
+                    if (options.pattern) {
+                        const m = val.match(options.pattern);
+                        if (m)
+                            val = m[0];
+                    }
+                    // Final cleanup
+                    val = val.replace(/\s+(?:jt|GR|No|REF|Yes|No|STATE|CODE|GSTIN|DA).*$/i, '').trim();
+                    val = val.replace(/[«»|()_]/g, '').trim();
+                    return val.length > 2 ? val : null;
+                }
+            }
+            return null;
+        };
+        // NAME heuristic: look for line between RECEIVER and ADDRESS if NAME label is missing
+        let name = getValue(/NAME/i, { stop: /ADDRESS/i });
+        if (!name) {
+            const receiverIdx = lines.findIndex(l => l.includes('RECEIVER'));
+            const addressIdx = lines.findIndex(l => l.includes('ADDRESS'));
+            if (receiverIdx !== -1 && addressIdx !== -1 && addressIdx > receiverIdx + 1) {
+                // Take the line(s) in between
+                name = lines.slice(receiverIdx + 1, addressIdx).join(' ').trim();
+                name = name.split(/INVOICE|DATE/i)[0].trim();
+            }
         }
-        const prefix = path.join(tempDir, `${uniqueId}_page`);
-        try {
-            // ── Step 1: High-DPI conversion (300 DPI makes a huge difference for scans)
-            try {
-                execSync(`pdftoppm -png -r 300 "${pdfPath}" "${prefix}"`, { stdio: 'pipe' });
-                console.log('[VehicleStockInwardService] pdftoppm 300dpi succeeded');
-            }
-            catch (e) {
-                console.error('[VehicleStockInwardService] pdftoppm failed:', e.stderr?.toString() || e.message);
-                throw e;
-            }
-            // ── Step 2: Collect page images
-            const allFiles = await fs.readdir(tempDir);
-            const pageFiles = allFiles
-                .filter(f => f.startsWith(`${uniqueId}_page-`) && f.endsWith('.png'))
-                .sort();
-            if (pageFiles.length === 0)
-                throw new Error('pdftoppm produced no images');
-            console.log(`[VehicleStockInwardService] Found ${pageFiles.length} page(s)`);
-            // ── Step 3: Preprocess each page with ImageMagick then OCR
-            const worker = await createWorker('eng');
-            await worker.setParameters({
-                tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-/:.,()',
-                preserve_interword_spaces: '1',
-            });
-            let fullText = '';
-            for (const pageFile of pageFiles) {
-                const imgPath = path.join(tempDir, pageFile);
-                const processedPath = `${path.join(tempDir, pageFile)}_processed.png`;
-                try {
-                    // ImageMagick: deskew + grayscale + sharpen + threshold for clean OCR
-                    execSync(`convert "${imgPath}" -deskew 40% -colorspace Gray -sharpen 0x1 -threshold 50% "${processedPath}"`, { stdio: 'pipe' });
-                    console.log(`[VehicleStockInwardService] Preprocessed: ${pageFile}`);
-                }
-                catch {
-                    // If ImageMagick not available, use original
-                    console.warn('[VehicleStockInwardService] ImageMagick not available, using raw image');
-                    await fs.copyFile(imgPath, processedPath);
-                }
-                const { data: { text } } = await worker.recognize(processedPath);
-                fullText += text + '\n';
-                try {
-                    await fs.unlink(imgPath);
-                }
-                catch { }
-                try {
-                    await fs.unlink(processedPath);
-                }
-                catch { }
-            }
-            await worker.terminate();
-            if (!filePath.endsWith('.pdf')) {
-                try {
-                    await fs.unlink(pdfPath);
-                }
-                catch { }
-            }
-            console.log(`[VehicleStockInwardService] OCR done. Text length: ${fullText.length}`);
-            return fullText;
-        }
-        catch (error) {
-            console.error('[VehicleStockInwardService] OCR extraction failed:', error);
-            throw new Error('Failed to extract text from PDF');
-        }
-    }
-    // ──────────────────────────────────────────────────────────────────────────
-    // extractDataFromText — Regex-based data extraction from PDF text
-    // ──────────────────────────────────────────────────────────────────────────
-    static extractDataFromText(text) {
-        const extractedData = {
-            'NAME': null,
-            'ADDRESS': null,
-            'ADDRESS OF DELIVERY': null,
-            'INVOICE NO': null,
-            'DATE': null,
-            'PLACE OF SUPPLY': null,
-            'DA NUMBER': null,
-            'DA DATE': null,
-            'MODE OF DISPATCH': null,
-            'TRANSPORTER': null,
-            'FROM': null,
-            'TO': null,
-            'INSURANCE CO': null,
-            'POLICY NO': null,
-            'VEHICLE NO': null,
+        const data = {
+            'NAME': name,
+            'ADDRESS': getValue(/ADDRESS/i, { stop: /STATE|KARNATAKA|TAMILNADU|GSTIN/i }),
+            'ADDRESS OF DELIVERY': getValue(/ADDRESS OF DELIVERY/i, { nextLine: true, stop: /FROM|INSURANCE|TRANSPORT/i }) ||
+                getValue(/SHIP TO/i, { nextLine: true, stop: /FROM|INSURANCE|TRANSPORT/i }),
+            'INVOICE NO': getValue(/INVOICE NO/i, { pattern: /[A-Z0-9]{8,12}/ }) || getValue(/INVOICE/i, { pattern: /[A-Z0-9]{8,12}/ }),
+            'DATE': getValue(/DATE/i, { pattern: /\d{1,2}[-\/][A-Za-z0-9]{3}[-\/]\d{2,4}/ }),
+            'PLACE OF SUPPLY': getValue(/PLACE OF SUPPLY/i, { stop: /WHETHER/i }),
+            'DA NUMBER': getValue(/DA NUMBER/i, { nextLine: true, pattern: /\d{6}/ }),
+            'DA DATE': getValue(/DA DATE/i, { pattern: /\d{1,2}[-\/][A-Za-z0-9]{3}[-\/]\d{2,4}/ }),
+            'MODE OF DISPATCH': getValue(/MODE OF DISPATCH/i, { stop: /WAY/i }) || getValue(/MODE/i),
+            'TRANSPORTER': getValue(/TRANSPORTER/i, { stop: /FROM|POLICY/i }),
+            'FROM': getValue(/FROM/i, { stop: /TO|INSURANCE/i }),
+            'TO': getValue(/TO/i, { stop: /MODEL|QTY/i }),
+            'INSURANCE CO': getValue(/INSURANCE CO/i, { stop: /POLICY|VEHICLE/i }),
+            'POLICY NO': getValue(/POLICY NO/i),
+            'VEHICLE NO': getValue(/VEHICLE NO/i),
             'VEHICLES': []
         };
-        // More flexible regex patterns for Yamaha Dispatch Advice PDFs
-        // Dealer Name - multiple patterns
-        let nameMatch = text.match(/DETAILS OF RECEIVER\s*\(BILLED TO\)[\s\S]*?NAME[:\s]*([^\n]+)/i);
-        if (!nameMatch)
-            nameMatch = text.match(/NAME[:\s]*([^\n]+)/i);
-        if (!nameMatch)
-            nameMatch = text.match(/BILLED TO\s*[:\s]*([^\n]+)/i);
-        if (nameMatch && nameMatch[1]) {
-            extractedData['NAME'] = nameMatch[1].trim();
-        }
-        // Billing Address - multiple patterns
-        let addressMatch = text.match(/DETAILS OF RECEIVER\s*\(BILLED TO\)[\s\S]*?ADDRESS[:\s]*([^\n]+)/i);
-        if (!addressMatch)
-            addressMatch = text.match(/ADDRESS[:\s]*([^\n]+)/i);
-        if (addressMatch && addressMatch[1]) {
-            extractedData['ADDRESS'] = addressMatch[1].trim();
-        }
-        // Delivery Address - multiple patterns
-        let deliveryAddressMatch = text.match(/ADDRESS OF DELIVERY\s*\(SHIP TO\)[:\s]*([^\n]+)/i);
-        if (!deliveryAddressMatch)
-            deliveryAddressMatch = text.match(/SHIP TO[:\s]*([^\n]+)/i);
-        if (deliveryAddressMatch && deliveryAddressMatch[1]) {
-            extractedData['ADDRESS OF DELIVERY'] = deliveryAddressMatch[1].trim();
-        }
-        // Invoice Number - multiple patterns
-        let invoiceMatch = text.match(/INVOICE\s*NO[:\s]*([A-Z0-9]+)/i);
-        if (!invoiceMatch)
-            invoiceMatch = text.match(/INVOICE\s*NUMBER[:\s]*([A-Z0-9]+)/i);
-        if (!invoiceMatch)
-            invoiceMatch = text.match(/INVOICE[:\s]*([A-Z0-9]+)/i);
-        if (invoiceMatch && invoiceMatch[1]) {
-            extractedData['INVOICE NO'] = invoiceMatch[1].trim();
-        }
-        // Date - multiple patterns
-        let dateMatch = text.match(/DATE[:\s]*([0-9]{1,2}[-][A-Za-z]{3}[-][0-9]{4})/i);
-        if (!dateMatch)
-            dateMatch = text.match(/([0-9]{1,2}[-][A-Za-z]{3}[-][0-9]{4})/i);
-        if (dateMatch && dateMatch[1]) {
-            extractedData['DATE'] = dateMatch[1].trim();
-        }
-        // Place of Supply
-        const placeMatch = text.match(/PLACE OF SUPPLY[:\s]*([^\n]+)/i);
-        if (placeMatch && placeMatch[1]) {
-            extractedData['PLACE OF SUPPLY'] = placeMatch[1].trim();
-        }
-        // DA Number - multiple patterns
-        let daNumberMatch = text.match(/DA\s*NUMBER[:\s]*([0-9]+)/i);
-        if (!daNumberMatch)
-            daNumberMatch = text.match(/DA\s*NO[:\s]*([0-9]+)/i);
-        if (daNumberMatch && daNumberMatch[1]) {
-            extractedData['DA NUMBER'] = daNumberMatch[1].trim();
-        }
-        // DA Date - multiple patterns
-        let daDateMatch = text.match(/DA\s*DATE[:\s]*([0-9]{1,2}[-][A-Za-z]{3}[-][0-9]{4})/i);
-        if (!daDateMatch)
-            daDateMatch = text.match(/DA\s*DATE[:\s]*([0-9]{1,2}[-][A-Za-z]{3}[-][0-9]{4})/i);
-        if (daDateMatch && daDateMatch[1]) {
-            extractedData['DA DATE'] = daDateMatch[1].trim();
-        }
-        // Mode of Dispatch - multiple patterns
-        let modeMatch = text.match(/MODE OF DISPATCH[:\s]*([^\n]+)/i);
-        if (!modeMatch)
-            modeMatch = text.match(/DISPATCH[:\s]*([^\n]+)/i);
-        if (modeMatch && modeMatch[1]) {
-            extractedData['MODE OF DISPATCH'] = modeMatch[1].trim();
-        }
-        // Transporter - multiple patterns
-        let transporterMatch = text.match(/TRANSPORTER[:\s]*([^\n]+)/i);
-        if (!transporterMatch)
-            transporterMatch = text.match(/TRANSPORT[:\s]*([^\n]+)/i);
-        if (transporterMatch && transporterMatch[1]) {
-            extractedData['TRANSPORTER'] = transporterMatch[1].trim();
-        }
-        // From location
-        const fromMatch = text.match(/FROM[:\s]*([^\n]+)/i);
-        if (fromMatch && fromMatch[1]) {
-            extractedData['FROM'] = fromMatch[1].trim();
-        }
-        // To location
-        const toMatch = text.match(/TO[:\s]*([^\n]+)/i);
-        if (toMatch && toMatch[1]) {
-            extractedData['TO'] = toMatch[1].trim();
-        }
-        // Insurance Company - multiple patterns
-        let insuranceMatch = text.match(/INSURANCE\s*CO[:\s]*([^\n]+)/i);
-        if (!insuranceMatch)
-            insuranceMatch = text.match(/INSURANCE\s*COMPANY[:\s]*([^\n]+)/i);
-        if (insuranceMatch && insuranceMatch[1]) {
-            extractedData['INSURANCE CO'] = insuranceMatch[1].trim();
-        }
-        // Policy Number - multiple patterns
-        let policyMatch = text.match(/POLICY\s*NO[:\s]*([A-Z0-9\/\-]+)/i);
-        if (!policyMatch)
-            policyMatch = text.match(/POLICY\s*NUMBER[:\s]*([A-Z0-9\/\-]+)/i);
-        if (policyMatch && policyMatch[1]) {
-            extractedData['POLICY NO'] = policyMatch[1].trim();
-        }
-        // Vehicle Number - multiple patterns
-        let vehicleNoMatch = text.match(/VEHICLE\s*NO[:\s]*([A-Z0-9\-]+)/i);
-        if (!vehicleNoMatch)
-            vehicleNoMatch = text.match(/VEHICLE\s*NUMBER[:\s]*([A-Z0-9\-]+)/i);
-        if (vehicleNoMatch && vehicleNoMatch[1]) {
-            extractedData['VEHICLE NO'] = vehicleNoMatch[1].trim();
-        }
-        // Extract vehicle table data
-        extractedData['VEHICLES'] = this.extractVehicleTable(text);
-        return extractedData;
-    }
-    // ──────────────────────────────────────────────────────────────────────────
-    // extractVehicleTable — Extract vehicle information from table
-    // ──────────────────────────────────────────────────────────────────────────
-    static extractVehicleTable(text) {
-        const vehicles = [];
-        // Try each pattern
-        const patterns = [
-            /([A-Z]{2}[A-Z0-9]{2,4}-\d{3}[A-Z])\s+(\d+)\s+(\d+)\s+([A-Z0-9]{15,20})\s+([A-Z0-9]+)\s+([A-Z0-9]+)/gi,
-            /([A-Z]{2}[A-Z0-9]{2,4}-\d{3}[A-Z])\s+(\d+)\s+([A-Z0-9]{15,20})\s+([A-Z0-9]+)\s+([A-Z0-9]+)/gi,
-            /([A-Z]{2}[A-Z0-9]{2,4}-\d{3}[A-Z]).*?([A-Z0-9]{17})/gi
-        ];
-        for (const pattern of patterns) {
-            let match;
-            while ((match = pattern.exec(text)) !== null) {
-                let modelCode, qty, chassisNo, engineNo, colorCode;
-                if (match.length >= 6) {
-                    // Full match: model, qty, rowNo, chassis, engine, color
-                    [, modelCode, qty, , chassisNo, engineNo, colorCode] = match;
-                }
-                else if (match.length >= 3) {
-                    // Partial match: model and chassis
-                    [, modelCode, chassisNo] = match;
-                    qty = '1';
-                    engineNo = '';
-                    colorCode = '';
-                }
-                if (modelCode && chassisNo) {
-                    vehicles.push({
-                        modelCode: modelCode.trim(),
-                        productName: null,
-                        qty: parseInt(qty || '1') || 1,
-                        chassisNo: chassisNo.trim().substring(0, 17), // Ensure 17 chars
-                        engineNo: engineNo?.trim() || '',
-                        colorCode: colorCode?.trim() || ''
-                    });
-                }
-            }
-            if (vehicles.length > 0)
-                break; // Stop if we found vehicles
-        }
-        // If regex doesn't work, try alternative approach for table extraction
-        if (vehicles.length === 0) {
-            return this.extractVehicleTableAlternative(text);
-        }
-        return vehicles;
-    }
-    // ──────────────────────────────────────────────────────────────────────────
-    // extractVehicleTableAlternative — Fallback method for vehicle table extraction
-    // ──────────────────────────────────────────────────────────────────────────
-    static extractVehicleTableAlternative(text) {
-        const vehicles = [];
-        // Look for chassis numbers (17 characters) and extract surrounding context
-        const chassisPattern = /\b([A-Z0-9]{17})\b/g;
-        const lines = text.split('\n');
+        let insideTable = false;
+        let currentModel = '';
         for (const line of lines) {
-            const chassisMatch = line.match(chassisPattern);
-            if (chassisMatch) {
-                // Try to extract other information from the same line
-                const parts = line.split(/\s+/);
-                const chassisIndex = parts.findIndex(part => part.length === 17 && /^[A-Z0-9]+$/.test(part));
-                if (chassisIndex > 0) {
-                    const modelCode = parts[chassisIndex - 3] || '';
-                    const qtyStr = parts[chassisIndex - 2] || '1';
-                    const engineNo = parts[chassisIndex + 1] || '';
-                    const colorCode = parts[chassisIndex + 2] || '';
-                    // Validate model code pattern
-                    if (/^[A-Z]{2}[A-Z0-9]{2,4}-\d{3}[A-Z]$/.test(modelCode)) {
-                        vehicles.push({
-                            modelCode,
+            const trimmed = line.trim();
+            if (trimmed.includes('Chassis No.') || (trimmed.includes('Chassis') && trimmed.includes('No.'))) {
+                insideTable = true;
+                continue;
+            }
+            if (insideTable && (trimmed.includes('Total') || trimmed.includes('FOR INDIA') || trimmed.includes('Authorized') || (trimmed.length < 5 && !trimmed.match(/[A-Z0-9]{10,}/)))) {
+                if (!trimmed.match(/[A-Z0-9]{10,}/)) { // stop if line doesn't look like chassis
+                    insideTable = false;
+                }
+                continue;
+            }
+            if (insideTable) {
+                const chassisMatch = trimmed.match(/[A-Z0-9]{10,}[A-Z0-9]{5,}/);
+                if (chassisMatch) {
+                    const rawChassis = chassisMatch[0];
+                    const chassisNo = rawChassis.replace(/[^A-Z0-9]/g, '').slice(-17);
+                    if (chassisNo.length === 17) {
+                        const tokens = trimmed.split(/\s+/).filter(t => t.length > 0);
+                        const chassisTokenIdx = tokens.findIndex(t => t.includes(rawChassis));
+                        let foundModel = '';
+                        for (let i = 0; i < Math.max(0, chassisTokenIdx); i++) {
+                            const t = tokens[i].replace(/[^A-Z0-9\-]/g, '');
+                            if (t.length >= 6 && /[A-Z]/.test(t) && !t.includes(chassisNo)) {
+                                foundModel = t;
+                                break;
+                            }
+                        }
+                        if (foundModel)
+                            currentModel = foundModel;
+                        let engineNo = (chassisTokenIdx !== -1 && tokens[chassisTokenIdx + 1])
+                            ? tokens[chassisTokenIdx + 1].replace(/[^A-Z0-9]/g, '')
+                            : null;
+                        const colorToken = tokens[tokens.length - 1];
+                        const colorCode = colorToken ? colorToken.replace(/[^A-Z0-9]/g, '') : null;
+                        const dateToken = tokens.find(t => t.match(/^\d{2}\/\d{4}$/) || t.match(/^\d{2}\/\d{2}\/\d{4}$/));
+                        let mfgDate = null;
+                        if (dateToken) {
+                            const parts = dateToken.split('/');
+                            if (parts.length === 2) {
+                                mfgDate = new Date(parseInt(parts[1]), parseInt(parts[0]) - 1, 1);
+                            }
+                            else if (parts.length === 3) {
+                                mfgDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                            }
+                        }
+                        else {
+                            // Fallback to chassis 10th char if no date token found
+                            const yearCode = chassisNo.charAt(9);
+                            const yearMap = {
+                                'G': 2016, 'H': 2017, 'J': 2018, 'K': 2019, 'L': 2020,
+                                'M': 2021, 'N': 2022, 'P': 2023, 'R': 2024, 'S': 2025, 'T': 2026
+                            };
+                            if (yearMap[yearCode]) {
+                                mfgDate = new Date(yearMap[yearCode], 0, 1);
+                            }
+                        }
+                        data['VEHICLES'].push({
+                            modelCode: currentModel || 'UNKNOWN',
                             productName: null,
-                            qty: parseInt(qtyStr) || 1,
-                            chassisNo: chassisMatch[0],
-                            engineNo,
-                            colorCode
+                            qty: 1,
+                            chassisNo: chassisNo,
+                            engineNo: engineNo,
+                            colorCode: colorCode,
+                            mfgDate: mfgDate
                         });
                     }
                 }
             }
         }
-        return vehicles;
+        return data;
     }
-    // ──────────────────────────────────────────────────────────────────────────
-    // create — persist to database
-    // ──────────────────────────────────────────────────────────────────────────
-    static async create(data, createdById, branchId) {
+    static async createHierarchical(data, createdById, branchId) {
+        const generatedInwardNo = await IdGeneratorService.generateNextId('VPI', branchId);
         const isMapped = !!data.dealerName;
+        const invoiceNo = isMapped ? data.invoiceNo : data['INVOICE NO'];
+        if (invoiceNo) {
+            const existingRecord = await prisma.vehicleStockInward.findFirst({
+                where: { invoiceNo }
+            });
+            if (existingRecord) {
+                throw new Error(`Inward record with invoice number "${invoiceNo}" already exists`);
+            }
+        }
         const inwardData = isMapped
             ? {
                 dealerName: data.dealerName,
@@ -373,111 +226,388 @@ export class VehicleStockInwardService {
                 policyNumber: data['POLICY NO'],
                 vehicleNo: data['VEHICLE NO'],
             };
+        // Attempt to find a matching dealer by name to set dealerId
+        const dealerName = inwardData.dealerName;
+        let dealer = null;
+        if (dealerName && dealerName !== 'UNKNOWN') {
+            dealer = await prisma.dealer.findFirst({
+                where: { name: { contains: dealerName, mode: 'insensitive' } }
+            });
+            if (!dealer) {
+                // Auto-create dealer if not found
+                dealer = await prisma.dealer.create({
+                    data: {
+                        name: dealerName,
+                        status: 'ACTIVE'
+                    }
+                });
+            }
+        }
+        const dealerIdToSet = dealer?.id;
         const vehicles = isMapped
             ? (data.vehicles || [])
             : (data['VEHICLES'] || []);
-        const itemsToCreate = await Promise.all(vehicles.map(async (v) => {
-            const vehicleMaster = await prisma.vehicleMaster.findFirst({
-                where: { modelCode: v.modelCode },
+        const groupedVehicles = vehicles.reduce((groups, vehicle) => {
+            const colorCode = vehicle.colorCode || 'UNKNOWN';
+            const key = `${vehicle.modelCode}_${colorCode}`;
+            if (!groups[key]) {
+                groups[key] = {
+                    modelCode: vehicle.modelCode,
+                    colorCode: colorCode,
+                    qty: 0,
+                    vehicles: []
+                };
+            }
+            groups[key].qty += (Number(vehicle.qty) || 1);
+            groups[key].vehicles.push({
+                chassisNo: vehicle.chassisNo,
+                engineNo: vehicle.engineNo,
+                colorCode: vehicle.colorCode,
+                mfgDate: vehicle.mfgDate
             });
-            const colorImage = vehicleMaster && v.colorCode
-                ? await prisma.image.findFirst({
-                    where: { code: v.colorCode, vehicleMasterId: vehicleMaster.id },
-                })
-                : null;
+            return groups;
+        }, {});
+        const lineItemsToCreate = await Promise.all(Object.values(groupedVehicles).map(async (group) => {
+            let vehicleMaster = await prisma.vehicleMaster.findFirst({
+                where: { modelCode: group.modelCode },
+            });
+            if (!vehicleMaster && group.modelCode.includes('-')) {
+                const baseModelCode = group.modelCode.split('-')[0];
+                vehicleMaster = await prisma.vehicleMaster.findFirst({
+                    where: { modelCode: baseModelCode }
+                });
+            }
+            const individualVehicles = await Promise.all(group.vehicles.map(async (vehicle) => {
+                const colorImage = vehicleMaster && vehicle.colorCode
+                    ? await prisma.image.findFirst({
+                        where: { code: vehicle.colorCode, vehicleMasterId: vehicleMaster.id },
+                    })
+                    : null;
+                // Decode MFG Date if not present
+                let mfgDate = vehicle.mfgDate;
+                const manufacturerId = data.manufacturerId || 'ck8g6k0a249el0880cmkbpizm';
+                if (!mfgDate && vehicle.chassisNo) {
+                    mfgDate = await FrameNumberService.decodeChassisNo(vehicle.chassisNo, manufacturerId);
+                }
+                return {
+                    chassisNo: vehicle.chassisNo,
+                    engineNo: vehicle.engineNo,
+                    colorCode: vehicle.colorCode,
+                    imageId: colorImage?.id,
+                    mfgDate: mfgDate
+                };
+            }));
             return {
-                vehicleMasterId: vehicleMaster?.id ?? null,
-                imageId: colorImage?.id ?? null,
-                engineNo: v.engineNo,
-                chassisNo: v.chassisNo,
+                modelCode: group.modelCode,
+                qty: group.qty,
+                vehicleMasterId: vehicleMaster?.id,
+                vehicles: { create: individualVehicles }
             };
         }));
         return prisma.vehicleStockInward.create({
             data: {
                 ...inwardData,
+                dealerId: dealerIdToSet,
+                inwardNo: generatedInwardNo || inwardData.invoiceNo,
                 date: inwardData.date ? new Date(inwardData.date) : null,
                 daDate: inwardData.daDate ? new Date(inwardData.daDate) : null,
+                totalVehicles: vehicles.length,
                 createdById,
                 branchId,
-                items: { create: itemsToCreate },
+                lineItems: { create: lineItemsToCreate },
             },
-            include: { items: true },
+            include: {
+                lineItems: {
+                    include: {
+                        vehicleMaster: true,
+                        vehicles: {
+                            include: { image: true }
+                        }
+                    }
+                }
+            },
         });
     }
-    // ──────────────────────────────────────────────────────────────────────────
-    // getAll / getById
-    // ──────────────────────────────────────────────────────────────────────────
+    static async create(data, createdById, branchId) {
+        return this.createHierarchical(data, createdById, branchId);
+    }
+    static transformHierarchicalToFlat(hierarchicalData) {
+        if (!hierarchicalData.lineItems) {
+            return {
+                ...hierarchicalData,
+                VEHICLES: hierarchicalData.items?.map((item) => ({
+                    modelCode: item.vehicleMaster?.modelCode || '',
+                    qty: 1,
+                    chassisNo: item.chassisNo || '',
+                    engineNo: item.engineNo || '',
+                    colorCode: item.image?.code || ''
+                })) || []
+            };
+        }
+        const vehicles = [];
+        hierarchicalData.lineItems.forEach((lineItem) => {
+            lineItem.vehicles.forEach((vehicle) => {
+                vehicles.push({
+                    modelCode: lineItem.modelCode,
+                    qty: lineItem.qty,
+                    chassisNo: vehicle.chassisNo,
+                    engineNo: vehicle.engineNo,
+                    colorCode: vehicle.colorCode,
+                    imageUrl: vehicle.image?.url || undefined
+                });
+            });
+        });
+        return {
+            ...hierarchicalData,
+            VEHICLES: vehicles
+        };
+    }
     static async getAll(query) {
         const { branchId } = query;
-        return prisma.vehicleStockInward.findMany({
-            where: branchId ? { branchId } : {},
-            include: {
-                items: { include: { vehicleMaster: true, image: true } },
-                createdBy: true
-            },
-            orderBy: { createdAt: 'desc' },
-        });
+        try {
+            const records = await prisma.vehicleStockInward.findMany({
+                where: branchId ? { branchId } : {},
+                include: {
+                    items: { include: { vehicleMaster: true, image: true } },
+                    lineItems: {
+                        include: {
+                            vehicleMaster: true,
+                            vehicles: {
+                                include: { image: true }
+                            }
+                        }
+                    },
+                    createdBy: true
+                },
+                orderBy: { createdAt: 'desc' },
+            });
+            return records.map((record) => this.transformHierarchicalToFlat(record));
+        }
+        catch (error) {
+            console.log('[VehicleStockInwardService] Using legacy getAll due to:', error.message);
+            const records = await prisma.vehicleStockInward.findMany({
+                where: branchId ? { branchId } : {},
+                include: {
+                    items: { include: { vehicleMaster: true, image: true } },
+                    createdBy: true
+                },
+                orderBy: { createdAt: 'desc' },
+            });
+            return records.map((record) => this.transformHierarchicalToFlat(record));
+        }
     }
     static async getById(id) {
-        return prisma.vehicleStockInward.findUnique({
+        const record = await prisma.vehicleStockInward.findUnique({
             where: { id },
             include: {
                 items: { include: { vehicleMaster: true, image: true } },
+                lineItems: {
+                    include: {
+                        vehicleMaster: true,
+                        vehicles: {
+                            include: { image: true }
+                        }
+                    }
+                },
                 manufacturer: true,
                 createdBy: true,
             },
         });
+        if (!record)
+            return null;
+        return this.transformHierarchicalToFlat(record);
     }
     static async update(id, data) {
         const { vehicles, ...inwardData } = data;
-        // Ensure deliveryAddress is mapped if it comes as addressOfDelivery
         if (inwardData.addressOfDelivery) {
             inwardData.deliveryAddress = inwardData.addressOfDelivery;
             delete inwardData.addressOfDelivery;
         }
-        const itemsToUpdate = await Promise.all((vehicles || []).map(async (v) => {
-            const vehicleMaster = await prisma.vehicleMaster.findFirst({
-                where: { modelCode: v.modelCode },
+        return await this.updateHierarchical(id, inwardData, vehicles || []);
+    }
+    static async updateHierarchical(id, inwardData, vehicles) {
+        const groupedVehicles = vehicles.reduce((groups, vehicle) => {
+            const colorCode = vehicle.colorCode || 'UNKNOWN';
+            const key = `${vehicle.modelCode}_${colorCode}`;
+            if (!groups[key]) {
+                groups[key] = {
+                    modelCode: vehicle.modelCode,
+                    colorCode: colorCode,
+                    qty: 0,
+                    vehicles: []
+                };
+            }
+            groups[key].qty += (Number(vehicle.qty) || 1);
+            groups[key].vehicles.push({
+                chassisNo: vehicle.chassisNo,
+                engineNo: vehicle.engineNo,
+                colorCode: vehicle.colorCode
             });
-            const colorImage = vehicleMaster && v.colorCode
-                ? await prisma.image.findFirst({
-                    where: { code: v.colorCode, vehicleMasterId: vehicleMaster.id },
-                })
-                : null;
+            return groups;
+        }, {});
+        // Attempt to find a matching dealer by name to set dealerId
+        const dealerName = inwardData.dealerName;
+        let dealer = null;
+        if (dealerName && dealerName !== 'UNKNOWN') {
+            dealer = await prisma.dealer.findFirst({
+                where: { name: { contains: dealerName, mode: 'insensitive' } }
+            });
+            if (!dealer) {
+                // Auto-create dealer if not found
+                dealer = await prisma.dealer.create({
+                    data: {
+                        name: dealerName,
+                        status: 'ACTIVE'
+                    }
+                });
+            }
+        }
+        const dealerIdToSet = dealer?.id;
+        const lineItemsToCreate = await Promise.all(Object.values(groupedVehicles).map(async (group) => {
+            let vehicleMaster = await prisma.vehicleMaster.findFirst({
+                where: { modelCode: group.modelCode },
+            });
+            if (!vehicleMaster && group.modelCode.includes('-')) {
+                const baseModelCode = group.modelCode.split('-')[0];
+                vehicleMaster = await prisma.vehicleMaster.findFirst({
+                    where: { modelCode: baseModelCode }
+                });
+            }
+            const individualVehicles = await Promise.all(group.vehicles.map(async (vehicle) => {
+                const colorImage = vehicleMaster && vehicle.colorCode
+                    ? await prisma.image.findFirst({
+                        where: { code: vehicle.colorCode, vehicleMasterId: vehicleMaster.id },
+                    })
+                    : null;
+                // Decode MFG Date if not present
+                let mfgDate = vehicle.mfgDate;
+                const manufacturerId = inwardData.manufacturerId || 'ck8g6k0a249el0880cmkbpizm';
+                if (!mfgDate && vehicle.chassisNo) {
+                    mfgDate = await FrameNumberService.decodeChassisNo(vehicle.chassisNo, manufacturerId);
+                }
+                return {
+                    chassisNo: vehicle.chassisNo,
+                    engineNo: vehicle.engineNo,
+                    colorCode: vehicle.colorCode,
+                    imageId: colorImage?.id,
+                    mfgDate: mfgDate
+                };
+            }));
             return {
-                vehicleMasterId: vehicleMaster?.id ?? null,
-                imageId: colorImage?.id ?? null,
-                engineNo: v.engineNo,
-                chassisNo: v.chassisNo,
+                modelCode: group.modelCode,
+                qty: group.qty,
+                vehicleMasterId: vehicleMaster?.id,
+                vehicles: { create: individualVehicles }
             };
         }));
         return await prisma.$transaction(async (tx) => {
-            await tx.vehicleStockItem.deleteMany({
-                where: { inwardId: id }
-            });
-            return tx.vehicleStockInward.update({
+            await tx.individualVehicle.deleteMany({ where: { lineItem: { inwardId: id } } });
+            await tx.inwardLineItem.deleteMany({ where: { inwardId: id } });
+            await tx.vehicleStockItem.deleteMany({ where: { inwardId: id } });
+            const updated = await tx.vehicleStockInward.update({
                 where: { id },
                 data: {
                     ...inwardData,
+                    dealerId: dealerIdToSet,
                     date: inwardData.date ? new Date(inwardData.date) : null,
                     daDate: inwardData.daDate ? new Date(inwardData.daDate) : null,
-                    items: {
-                        create: itemsToUpdate
-                    }
+                    totalVehicles: vehicles.length,
+                    lineItems: { create: lineItemsToCreate }
                 },
-                include: { items: true }
+                include: {
+                    lineItems: {
+                        include: {
+                            vehicleMaster: true,
+                            vehicles: { include: { image: true } }
+                        }
+                    }
+                }
             });
+            return this.transformHierarchicalToFlat(updated);
         });
     }
     static async delete(id) {
         return await prisma.$transaction(async (tx) => {
-            await tx.vehicleStockItem.deleteMany({
-                where: { inwardId: id }
-            });
-            return tx.vehicleStockInward.delete({
-                where: { id }
-            });
+            await tx.individualVehicle.deleteMany({ where: { lineItem: { inwardId: id } } });
+            await tx.inwardLineItem.deleteMany({ where: { inwardId: id } });
+            await tx.vehicleStockItem.deleteMany({ where: { inwardId: id } });
+            return tx.vehicleStockInward.delete({ where: { id } });
         });
+    }
+    static async lookupVehicleImage(modelCode, colorCode) {
+        if (!modelCode || !colorCode)
+            return null;
+        try {
+            let vehicleMaster = await prisma.vehicleMaster.findFirst({ where: { modelCode } });
+            if (!vehicleMaster && modelCode.includes('-')) {
+                const baseModelCode = modelCode.split('-')[0];
+                vehicleMaster = await prisma.vehicleMaster.findFirst({ where: { modelCode: baseModelCode } });
+            }
+            if (!vehicleMaster)
+                return null;
+            const colorImage = await prisma.image.findFirst({
+                where: { code: colorCode, vehicleMasterId: vehicleMaster.id },
+            });
+            return colorImage?.url || null;
+        }
+        catch (error) {
+            console.error('[VehicleStockInwardService] Error looking up image:', error);
+            return null;
+        }
+    }
+    static async extractViaOCR(filePath) {
+        const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'autoinn-ocr-'));
+        const prefix = path.join(tempDir, 'page');
+        try {
+            console.log(`[VehicleStockInwardService] Converting PDF to PNG images in ${tempDir}...`);
+            execSync(`pdftoppm -png -r 300 "${filePath}" "${prefix}"`);
+            const files = await fs.readdir(tempDir);
+            const images = files.filter(f => f.endsWith('.png')).sort();
+            let combinedText = "";
+            for (const img of images) {
+                const imgPath = path.join(tempDir, img);
+                console.log(`[VehicleStockInwardService] OCRing ${img}...`);
+                // Try original and rotated if needed
+                let pageText = await VehicleStockInwardService.ocrWithRotationRetry(imgPath);
+                combinedText += pageText + "\n\n";
+            }
+            return combinedText;
+        }
+        catch (err) {
+            console.error('[VehicleStockInwardService] OCR logic failed:', err);
+            return "";
+        }
+        finally {
+            try {
+                await fs.rm(tempDir, { recursive: true, force: true });
+            }
+            catch (cleanupErr) {
+                console.error('[VehicleStockInwardService] OCR cleanup failed:', cleanupErr);
+            }
+        }
+    }
+    static async ocrWithRotationRetry(imgPath) {
+        // Try original first
+        const result = await Tesseract.recognize(imgPath, 'eng');
+        let text = result.data.text;
+        if (text.includes('DISPATCH ADVICE'))
+            return text;
+        // Try rotating matches
+        const rotations = [90, 180, 270];
+        for (const degrees of rotations) {
+            console.log(`[VehicleStockInwardService] "DISPATCH ADVICE" not found. Retrying with ${degrees} degree rotation...`);
+            const rotatedPath = imgPath.replace('.png', `_rot${degrees}.png`);
+            execSync(`convert "${imgPath}" -rotate ${degrees} "${rotatedPath}"`);
+            const rotResult = await Tesseract.recognize(rotatedPath, 'eng');
+            if (rotResult.data.text.includes('DISPATCH ADVICE') || rotResult.data.text.includes('YAMAHA')) {
+                console.log(`[VehicleStockInwardService] Header found with ${degrees} degree rotation!`);
+                return rotResult.data.text;
+            }
+            // Keep the best text just in case
+            if (rotResult.data.text.length > text.length)
+                text = rotResult.data.text;
+        }
+        return text;
     }
 }
 //# sourceMappingURL=vehicleStockInward.service.js.map

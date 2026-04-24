@@ -1,6 +1,8 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const connectionString = "postgresql://doadmin:USnMK5te7DV4pCCL@db-postgresql-blr1-76027-do-user-6868369-0.b.db.ondigitalocean.com:25060/autoinn?sslmode=require";
 
 async function exportData() {
@@ -14,10 +16,12 @@ async function exportData() {
     const rawData = {};
     const tables = [
         'User', 'Country', 'State', 'City', 'Access', 'Department', 'Hsn', 'Address',
-        'Company', 'Manufacturer', 'Dealer', 'Branch', 'BankDetails',
+        'Company', 'Manufacturer', 'SubDealer', 'Branch', 'BankDetails',
         'EmployeeProfile', 'VehicleMaster', 'VehiclePrice', 'Image',
         'PartsMaster', 'MultiVehicle', 'RoleAccess', 'File',
         'EmployeeDocument', 'BranchContacts', 'idCreation', 'FrameNumber',
+        'Supplier', 'SupplierContact', 'Service', '_VehicleMasterHasService',
+        'VehicleColor', '_VehicleMasterHasImage', '_VehicleMasterHasFile',
         '_DepartmentHasRoleAccess' // Helper for mapping
     ];
 
@@ -31,31 +35,40 @@ async function exportData() {
         }
     }
 
-    console.log('Mapping relations for Prisma 7...');
-
-    const users = (rawData['User'] || []).map(row => {
+    const mapRow = (row) => {
         const d = { ...row };
         if (d.createdBy) { d.createdById = d.createdBy; delete d.createdBy; }
-        // User in Prisma 1 had 'profile' which is the ID of EmployeeProfile
+        if (d.updatedBy) { delete d.updatedBy; }
+        if (d.deletedBy) { delete d.deletedBy; }
+
+        // Remove Prisma 1 specific relation fields that are now IDs
+        // This is a heuristic: if a field exists and there's a corresponding 'Id' field in Prisma 2,
+        // we might need to remap it. Most are already handled below.
+        return d;
+    };
+
+    const users = (rawData['User'] || []).map(row => {
+        const d = mapRow(row);
+        // Prisma 1 User has 'profile' which is the ID of EmployeeProfile
+        // In Prisma 2, EmployeeProfile has 'userId' pointing to User
         return d;
     });
 
     const employeeProfiles = (rawData['EmployeeProfile'] || []).map(profile => {
-        const d = { ...profile };
+        const d = mapRow(profile);
         // Find User that points to this profile
-        const user = users.find(u => u.profile === d.id);
+        const user = (rawData['User'] || []).find(u => u.profile === d.id);
         if (user) {
             d.userId = user.id;
         }
-        if (d.createdBy) { d.createdById = d.createdBy; delete d.createdBy; }
         if (d.address) { d.addressId = d.address; delete d.address; }
         if (d.bankDetails) { d.bankDetailsId = d.bankDetails; delete d.bankDetails; }
         if (d.department) { d.departmentId = d.department; delete d.department; }
         return d;
-    }).filter(p => p.userId); // Prisma 7 requires userId
+    }).filter(p => p.userId); // Prisma 2 requires userId
 
     const roleAccesses = (rawData['RoleAccess'] || []).map(ra => {
-        const d = { ...ra };
+        const d = mapRow(ra);
         if (d.access) { d.accessId = d.access; delete d.access; }
         // Get department from join table
         const join = (rawData['_DepartmentHasRoleAccess'] || []).find(j => j.B === d.id);
@@ -68,89 +81,156 @@ async function exportData() {
     // Simplified data structure matching the import script keys
     const data = {
         users,
-        countries: (rawData['Country'] || []).map(r => r),
+        countries: (rawData['Country'] || []).map(r => mapRow(r)),
         states: (rawData['State'] || []).map(r => {
-            const d = { ...r, countryId: r.country };
+            const d = mapRow(r);
+            d.countryId = r.country;
             delete d.country;
             return d;
         }),
         cities: (rawData['City'] || []).map(r => {
-            const d = { ...r, stateId: r.state };
+            const d = mapRow(r);
+            d.stateId = r.state;
             delete d.state;
             return d;
         }),
-        accesses: (rawData['Access'] || []),
-        departments: (rawData['Department'] || []).map(r => ({ ...r, createdById: r.createdBy })),
-        hsns: (rawData['Hsn'] || []).map(r => ({ ...r, createdById: r.createdBy })),
+        accesses: (rawData['Access'] || []).map(r => mapRow(r)),
+        departments: (rawData['Department'] || []).map(r => mapRow(r)),
+        hsns: (rawData['Hsn'] || []).map(r => mapRow(r)),
         addresses: (rawData['Address'] || []).map(r => {
-            const d = { ...r, cityId: r.district || r.city, stateId: r.state, countryId: r.country, createdById: r.createdBy };
+            const d = mapRow(r);
+            d.cityId = r.district || r.city;
+            d.stateId = r.state;
+            d.countryId = r.country;
             delete d.district; delete d.city; delete d.state; delete d.country;
             return d;
         }),
         companies: (rawData['Company'] || []).map(r => {
-            const d = { ...r, addressId: r.address, createdById: r.createdBy };
+            const d = mapRow(r);
+            d.addressId = r.address;
             delete d.address;
             return d;
         }),
         manufacturers: (rawData['Manufacturer'] || []).map(r => {
-            const d = { ...r, addressId: r.address, createdById: r.createdBy };
+            const d = mapRow(r);
+            d.addressId = r.address;
             delete d.address;
             return d;
         }),
-        dealers: (rawData['Dealer'] || []),
+        dealers: (rawData['SubDealer'] || []).map(r => {
+            const d = mapRow(r);
+            d.addressId = r.address;
+            d.shippingAddressId = r.shippingAddress;
+            delete d.address; delete d.shippingAddress;
+            return d;
+        }),
         branches: (rawData['Branch'] || []).map(r => {
-            const d = { ...r, addressId: r.address, companyId: r.company, createdById: r.createdBy };
+            const d = mapRow(r);
+            d.addressId = r.address;
+            d.companyId = r.company;
             delete d.address; delete d.company;
             return d;
         }),
-        bankDetails: (rawData['BankDetails'] || []).map(r => ({ ...r, createdById: r.createdBy })),
+        bankDetails: (rawData['BankDetails'] || []).map(r => mapRow(r)),
         employeeProfiles,
         vehicleMasters: (rawData['VehicleMaster'] || []).map(r => {
-            const d = { ...r, manufacturerId: r.manufacturer, createdById: r.createdBy };
-            delete d.manufacturer;
+            const d = mapRow(r);
+            d.manufacturerId = r.manufacturer;
+            d.hsnId = r.hsn;
+            delete d.manufacturer; delete d.hsn;
             return d;
         }),
         vehiclePrices: (rawData['VehiclePrice'] || []).map(r => {
-            const d = { ...r, vehicleMasterId: r.vehicleMaster, createdById: r.createdBy };
-            delete d.vehicleMaster;
+            const d = mapRow(r);
+            d.vehicleMasterId = r.vehicleModel;
+            delete d.vehicleModel;
             return d;
         }),
         images: (rawData['Image'] || []).map(r => {
-            const d = { ...r, vehicleMasterId: r.vehicleMaster, createdById: r.createdBy };
-            delete d.vehicleMaster;
+            const d = mapRow(r);
+            // Join table: A is Image ID, B is VehicleMaster ID
+            const join = (rawData['_VehicleMasterHasImage'] || []).find(j => j.A === d.id);
+            if (join) d.vehicleMasterId = join.B;
             return d;
         }),
         partsMasters: (rawData['PartsMaster'] || []).map(r => {
-            const d = { ...r, hsnId: r.hsn, manufacturerId: r.manufacturer, createdById: r.createdBy };
+            const d = mapRow(r);
+            d.hsnId = r.hsn;
+            d.manufacturerId = r.manufacturer;
             delete d.hsn; delete d.manufacturer;
             return d;
         }),
         multiVehicles: (rawData['MultiVehicle'] || []).map(r => {
-            const d = { ...r, vehicleId: r.vehicle, partsMasterId: r.partsMaster, createdById: r.createdBy };
+            const d = mapRow(r);
+            d.vehicleId = r.vehicle;
+            d.partsMasterId = r.partsMaster;
             delete d.vehicle; delete d.partsMaster;
             return d;
         }),
         roleAccesses,
-        files: (rawData['File'] || []).map(r => ({ ...r, createdById: r.createdBy })),
+        files: (rawData['File'] || []).map(r => {
+            const d = mapRow(r);
+            // Join table: A is File ID, B is VehicleMaster ID
+            const join = (rawData['_VehicleMasterHasFile'] || []).find(j => j.A === d.id);
+            if (join) d.vehicleMasterId = join.B;
+            return d;
+        }),
         employeeDocuments: (rawData['EmployeeDocument'] || []).map(r => {
-            const d = { ...r, userProfileId: r.userProfile, filesId: r.files, createdById: r.createdBy };
+            const d = mapRow(r);
+            d.userProfileId = r.userProfile;
+            d.filesId = r.files;
             delete d.userProfile; delete d.files;
             return d;
         }),
-        branchContacts: (rawData['BranchContacts'] || []),
+        branchContacts: (rawData['BranchContacts'] || []).map(r => {
+            const d = mapRow(r);
+            d.branchId = r.branch;
+            delete d.branch;
+            return d;
+        }),
         idCreations: (rawData['idCreation'] || []).map(r => {
-            const d = { ...r, branchId: r.branch, createdById: r.createdBy };
+            const d = mapRow(r);
+            d.branchId = r.branch;
             delete d.branch;
             return d;
         }),
         frameNumbers: (rawData['FrameNumber'] || []).map(r => {
-            const d = { ...r, manufacturerId: r.manufacturer, createdById: r.createdBy };
+            const d = mapRow(r);
+            d.manufacturerId = r.manufacturer;
             delete d.manufacturer;
+            return d;
+        }),
+        suppliers: (rawData['Supplier'] || []).map(r => {
+            const d = mapRow(r);
+            d.addressId = r.address;
+            d.shippingAddressId = r.shippingAddress;
+            delete d.address; delete d.shippingAddress;
+            return d;
+        }),
+        supplierContacts: (rawData['SupplierContact'] || []).map(r => {
+            const d = mapRow(r);
+            d.supplierId = r.supplier;
+            delete d.supplier;
+            return d;
+        }),
+        serviceDetails: (rawData['Service'] || []).map(r => {
+            const d = mapRow(r);
+            // Join table: A is Service ID, B is VehicleMaster ID
+            const join = (rawData['_VehicleMasterHasService'] || []).find(j => j.A === d.id);
+            if (join) {
+                d.vehicleMasterId = join.B;
+            }
+            return d;
+        }),
+        vehicleColors: (rawData['VehicleColor'] || []).map(r => {
+            const d = mapRow(r);
+            d.vehiclePriceId = r.vehiclePrice;
+            delete d.vehiclePrice;
             return d;
         }),
     };
 
-    // Convert floats
+    // Convert floats and sanitize
     Object.keys(data).forEach(key => {
         data[key] = data[key].map(row => {
             const newRow = { ...row };

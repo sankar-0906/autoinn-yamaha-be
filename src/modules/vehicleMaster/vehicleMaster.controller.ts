@@ -7,7 +7,17 @@ export class VehicleMasterController {
     static async getAll(req: Request, res: Response, next: NextFunction) {
         try {
             const vehicles = await VehicleMasterService.getAll();
-            return sendSuccess(res, 'Vehicles fetched successfully', vehicles);
+            return res.status(200).json({
+                code: 200,
+                response: {
+                    code: 200,
+                    msg: 'VehiclesMaster fetched',
+                    data: {
+                        count: vehicles.length,
+                        VehicleMaster: vehicles
+                    }
+                }
+            });
         } catch (error: any) {
             return sendError(res, error.message);
         }
@@ -45,6 +55,25 @@ export class VehicleMasterController {
         try {
             await VehicleMasterService.delete(req.params.id!);
             return sendSuccess(res, 'Vehicle deleted successfully');
+        } catch (error: any) {
+            return sendError(res, error.message);
+        }
+    }
+
+    static async getUniqueModels(req: Request, res: Response) {
+        try {
+            const models = await VehicleMasterService.getUniqueModelCodes();
+            return sendSuccess(res, 'Models fetched', models);
+        } catch (error: any) {
+            return sendError(res, error.message);
+        }
+    }
+
+    static async getColorsByModel(req: Request, res: Response) {
+        try {
+            const { modelCode } = req.params;
+            const colors = await VehicleMasterService.getColorsByModelCode(modelCode as string);
+            return sendSuccess(res, 'Colors fetched', colors);
         } catch (error: any) {
             return sendError(res, error.message);
         }

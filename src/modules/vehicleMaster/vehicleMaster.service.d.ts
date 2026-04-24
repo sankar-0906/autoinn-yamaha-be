@@ -1,244 +1,9 @@
 export declare class VehicleMasterService {
-    static getAll(): Promise<({
-        manufacturer: {
-            id: string;
-            email: string | null;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string | null;
-            addressId: string | null;
-            gst: string | null;
-            logo: string | null;
-            code: string | null;
-            vehicleManufacturer: boolean | null;
-        } | null;
-        images: {
-            url: string | null;
-            id: string;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            code: string | null;
-            color: string | null;
-            vehicleMasterId: string | null;
-        }[];
-        prices: {
-            id: string;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            vehicleMasterId: string | null;
-            rto: number | null;
-            showroomPrice: number;
-            roadTax: number | null;
-            tcs: number | null;
-            otherCharges: number | null;
-            discount: number | null;
-            accessoriesRemarks: string | null;
-            registrationFee: number | null;
-            handlingCharges: number | null;
-            rsa: number | null;
-            amc: number | null;
-            warrantyPrice: number | null;
-            insurance1plus5: number | null;
-            insurance5plus5: number | null;
-            insurance1plus5ZD: number | null;
-            insurance5plus5ZD: number | null;
-            priceValidFrom: Date | null;
-            priceValidTill: Date | null;
-        }[];
-    } & {
-        id: string;
-        createdById: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-        modelName: string;
-        manufacturerId: string | null;
-        modelCode: string | null;
-        category: string | null;
-        vehicleStatus: string | null;
-    })[]>;
-    static getById(id: string): Promise<({
-        manufacturer: {
-            id: string;
-            email: string | null;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string | null;
-            addressId: string | null;
-            gst: string | null;
-            logo: string | null;
-            code: string | null;
-            vehicleManufacturer: boolean | null;
-        } | null;
-        images: {
-            url: string | null;
-            id: string;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            code: string | null;
-            color: string | null;
-            vehicleMasterId: string | null;
-        }[];
-        prices: {
-            id: string;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            vehicleMasterId: string | null;
-            rto: number | null;
-            showroomPrice: number;
-            roadTax: number | null;
-            tcs: number | null;
-            otherCharges: number | null;
-            discount: number | null;
-            accessoriesRemarks: string | null;
-            registrationFee: number | null;
-            handlingCharges: number | null;
-            rsa: number | null;
-            amc: number | null;
-            warrantyPrice: number | null;
-            insurance1plus5: number | null;
-            insurance5plus5: number | null;
-            insurance1plus5ZD: number | null;
-            insurance5plus5ZD: number | null;
-            priceValidFrom: Date | null;
-            priceValidTill: Date | null;
-        }[];
-    } & {
-        id: string;
-        createdById: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-        modelName: string;
-        manufacturerId: string | null;
-        modelCode: string | null;
-        category: string | null;
-        vehicleStatus: string | null;
-    }) | null>;
-    static create(data: any): Promise<{
-        manufacturer: {
-            id: string;
-            email: string | null;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string | null;
-            addressId: string | null;
-            gst: string | null;
-            logo: string | null;
-            code: string | null;
-            vehicleManufacturer: boolean | null;
-        } | null;
-        images: {
-            url: string | null;
-            id: string;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            code: string | null;
-            color: string | null;
-            vehicleMasterId: string | null;
-        }[];
-        prices: {
-            id: string;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            vehicleMasterId: string | null;
-            rto: number | null;
-            showroomPrice: number;
-            roadTax: number | null;
-            tcs: number | null;
-            otherCharges: number | null;
-            discount: number | null;
-            accessoriesRemarks: string | null;
-            registrationFee: number | null;
-            handlingCharges: number | null;
-            rsa: number | null;
-            amc: number | null;
-            warrantyPrice: number | null;
-            insurance1plus5: number | null;
-            insurance5plus5: number | null;
-            insurance1plus5ZD: number | null;
-            insurance5plus5ZD: number | null;
-            priceValidFrom: Date | null;
-            priceValidTill: Date | null;
-        }[];
-    } & {
-        id: string;
-        createdById: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-        modelName: string;
-        manufacturerId: string | null;
-        modelCode: string | null;
-        category: string | null;
-        vehicleStatus: string | null;
-    }>;
-    static update(id: string, data: any): Promise<({
-        manufacturer: {
-            id: string;
-            email: string | null;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string | null;
-            addressId: string | null;
-            gst: string | null;
-            logo: string | null;
-            code: string | null;
-            vehicleManufacturer: boolean | null;
-        } | null;
-        images: {
-            url: string | null;
-            id: string;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            code: string | null;
-            color: string | null;
-            vehicleMasterId: string | null;
-        }[];
-        prices: {
-            id: string;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            vehicleMasterId: string | null;
-            rto: number | null;
-            showroomPrice: number;
-            roadTax: number | null;
-            tcs: number | null;
-            otherCharges: number | null;
-            discount: number | null;
-            accessoriesRemarks: string | null;
-            registrationFee: number | null;
-            handlingCharges: number | null;
-            rsa: number | null;
-            amc: number | null;
-            warrantyPrice: number | null;
-            insurance1plus5: number | null;
-            insurance5plus5: number | null;
-            insurance1plus5ZD: number | null;
-            insurance5plus5ZD: number | null;
-            priceValidFrom: Date | null;
-            priceValidTill: Date | null;
-        }[];
-    } & {
-        id: string;
-        createdById: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-        modelName: string;
-        manufacturerId: string | null;
-        modelCode: string | null;
-        category: string | null;
-        vehicleStatus: string | null;
-    }) | null>;
+    static getAll(): Promise<any[]>;
+    private static transformResponse;
+    static getById(id: string): Promise<any>;
+    static create(data: any): Promise<any>;
+    static update(id: string, data: any): Promise<any>;
     static delete(id: string): Promise<{
         id: string;
         createdById: string | null;
@@ -249,6 +14,17 @@ export declare class VehicleMasterService {
         modelCode: string | null;
         category: string | null;
         vehicleStatus: string | null;
+        hsnId: string | null;
+        noOfServices: number | null;
+        serviceIntervalKm: number | null;
+        serviceIntervalTime: number | null;
+        warrentyPeriodKm: number | null;
+        warrentyPeriodMonths: number | null;
     }>;
+    static getUniqueModelCodes(): Promise<(string | null)[]>;
+    static getColorsByModelCode(modelCode: string): Promise<{
+        code: string | null;
+        color: string | null;
+    }[]>;
 }
 //# sourceMappingURL=vehicleMaster.service.d.ts.map

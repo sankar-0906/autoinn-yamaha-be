@@ -1,5 +1,6 @@
 import Joi from 'joi';
 const addressSchema = Joi.object({
+    id: Joi.string().optional().allow(null, ''),
     line1: Joi.string().required(),
     line2: Joi.string().optional().allow(null, ''),
     line3: Joi.string().optional().allow(null, ''),
@@ -7,7 +8,12 @@ const addressSchema = Joi.object({
     cityId: Joi.string().optional().allow(null, ''),
     stateId: Joi.string().optional().allow(null, ''),
     countryId: Joi.string().optional().allow(null, ''),
-    pincode: Joi.string().required()
+    pincode: Joi.string().required(),
+    branchId: Joi.string().optional().allow(null, ''),
+    createdAt: Joi.any().optional(),
+    updatedAt: Joi.any().optional(),
+    createdBy: Joi.any().optional(),
+    dealerShippingId: Joi.any().optional()
 });
 export const createDealerSchema = Joi.object({
     name: Joi.string().required(),

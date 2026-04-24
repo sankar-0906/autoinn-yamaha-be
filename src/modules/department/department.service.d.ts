@@ -2,17 +2,17 @@ export declare class DepartmentService {
     static getAll(): Promise<({
         createdBy: {
             id: string;
-            phone2: string | null;
-            email: string | null;
+            createdById: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             phone: string | null;
+            phone2: string | null;
             password: string | null;
             profilePicture: string | null;
             status: boolean | null;
             employee: boolean | null;
+            email: string | null;
             verified: boolean | null;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
             lastLoginAt: Date | null;
         } | null;
         _count: {
@@ -20,22 +20,22 @@ export declare class DepartmentService {
         };
         roleAccess: ({
             access: {
-                create: boolean | null;
-                update: boolean | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                create: boolean | null;
+                update: boolean | null;
                 delete: boolean | null;
                 read: boolean | null;
                 print: boolean | null;
             } | null;
         } & {
             id: string;
+            subModule: string | null;
             createdAt: Date;
             updatedAt: Date;
             departmentId: string | null;
             master: string | null;
-            subModule: string | null;
             accessId: string | null;
         })[];
     } & {
@@ -50,17 +50,17 @@ export declare class DepartmentService {
     static getById(id: string): Promise<({
         createdBy: {
             id: string;
-            phone2: string | null;
-            email: string | null;
+            createdById: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             phone: string | null;
+            phone2: string | null;
             password: string | null;
             profilePicture: string | null;
             status: boolean | null;
             employee: boolean | null;
+            email: string | null;
             verified: boolean | null;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
             lastLoginAt: Date | null;
         } | null;
         _count: {
@@ -68,22 +68,22 @@ export declare class DepartmentService {
         };
         roleAccess: ({
             access: {
-                create: boolean | null;
-                update: boolean | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                create: boolean | null;
+                update: boolean | null;
                 delete: boolean | null;
                 read: boolean | null;
                 print: boolean | null;
             } | null;
         } & {
             id: string;
+            subModule: string | null;
             createdAt: Date;
             updatedAt: Date;
             departmentId: string | null;
             master: string | null;
-            subModule: string | null;
             accessId: string | null;
         })[];
     } & {
@@ -98,22 +98,22 @@ export declare class DepartmentService {
     static create(data: any): Promise<{
         roleAccess: ({
             access: {
-                create: boolean | null;
-                update: boolean | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                create: boolean | null;
+                update: boolean | null;
                 delete: boolean | null;
                 read: boolean | null;
                 print: boolean | null;
             } | null;
         } & {
             id: string;
+            subModule: string | null;
             createdAt: Date;
             updatedAt: Date;
             departmentId: string | null;
             master: string | null;
-            subModule: string | null;
             accessId: string | null;
         })[];
     } & {
@@ -128,22 +128,22 @@ export declare class DepartmentService {
     static update(id: string, data: any): Promise<{
         roleAccess: ({
             access: {
-                create: boolean | null;
-                update: boolean | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                create: boolean | null;
+                update: boolean | null;
                 delete: boolean | null;
                 read: boolean | null;
                 print: boolean | null;
             } | null;
         } & {
             id: string;
+            subModule: string | null;
             createdAt: Date;
             updatedAt: Date;
             departmentId: string | null;
             master: string | null;
-            subModule: string | null;
             accessId: string | null;
         })[];
     } & {

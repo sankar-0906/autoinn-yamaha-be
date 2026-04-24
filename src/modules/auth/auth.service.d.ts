@@ -25,17 +25,17 @@ export declare class AuthService {
             } | null;
         } & {
             id: string;
-            phone2: string | null;
-            email: string | null;
+            createdById: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             phone: string | null;
+            phone2: string | null;
             password: string | null;
             profilePicture: string | null;
             status: boolean | null;
             employee: boolean | null;
+            email: string | null;
             verified: boolean | null;
-            createdById: string | null;
-            createdAt: Date;
-            updatedAt: Date;
             lastLoginAt: Date | null;
         };
         token: string;

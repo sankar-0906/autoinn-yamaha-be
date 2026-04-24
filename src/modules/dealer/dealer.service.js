@@ -3,8 +3,12 @@ export class DealerService {
     static async getAll() {
         return prisma.dealer.findMany({
             include: {
-                address: true,
-                shippingAddress: true,
+                address: {
+                    include: { district: true, state: true, country: true }
+                },
+                shippingAddresses: {
+                    include: { branch: true, district: true, state: true, country: true }
+                },
                 createdBy: true
             }
         });
@@ -13,37 +17,91 @@ export class DealerService {
         return prisma.dealer.findUnique({
             where: { id },
             include: {
-                address: true,
-                shippingAddress: true,
+                address: {
+                    include: { district: true, state: true, country: true }
+                },
+                shippingAddresses: {
+                    include: { branch: true, district: true, state: true, country: true }
+                },
                 createdBy: true
             }
         });
     }
     static async create(data) {
-        const { address, shippingAddress, ...rest } = data;
+        // Handle both singular and plural from frontend
+        const { address, shippingAddress, shippingAddresses, ...rest } = data;
+        const inputShipping = shippingAddresses || (shippingAddress ? (Array.isArray(shippingAddress) ? shippingAddress : [shippingAddress]) : []);
+        const normalizeAddress = async (addr) => {
+            if (!addr || typeof addr !== 'object')
+                return null;
+            const { id: _, createdAt: __, updatedAt: ___, createdBy: ____, branch, ...cleanData } = addr;
+            // Link branch if provided
+            if (branch) {
+                const foundBranch = await prisma.branch.findFirst({
+                    where: {
+                        OR: [
+                            { id: branch },
+                            { name: { contains: branch, mode: 'insensitive' } }
+                        ]
+                    }
+                });
+                if (foundBranch) {
+                    cleanData.branchId = foundBranch.id;
+                }
+            }
+            return Object.keys(cleanData).length > 0 ? cleanData : null;
+        };
+        const billingData = await normalizeAddress(address);
+        const shippingList = [];
+        for (const s of inputShipping) {
+            const normalized = await normalizeAddress(s);
+            if (normalized)
+                shippingList.push(normalized);
+        }
         return prisma.dealer.create({
             data: {
                 ...rest,
-                address: address ? {
-                    create: address
-                } : undefined,
-                shippingAddress: shippingAddress ? {
-                    create: shippingAddress
+                address: billingData ? { create: billingData } : undefined,
+                shippingAddresses: shippingList.length > 0 ? {
+                    create: shippingList
                 } : undefined
             },
-            include: { address: true, shippingAddress: true }
+            include: { address: true, shippingAddresses: true }
         });
     }
     static async update(id, data) {
-        const { address, shippingAddress, ...rest } = data;
+        // Handle both singular and plural from frontend
+        const { address, shippingAddress, shippingAddresses, ...rest } = data;
+        const inputShipping = shippingAddresses || (shippingAddress ? (Array.isArray(shippingAddress) ? shippingAddress : [shippingAddress]) : []);
+        const normalizeAddress = async (addr) => {
+            if (!addr || typeof addr !== 'object')
+                return null;
+            const { id: _, createdAt: __, updatedAt: ___, createdBy: ____, branch, ...cleanData } = addr;
+            // Link branch if provided
+            if (branch) {
+                const foundBranch = await prisma.branch.findFirst({
+                    where: {
+                        OR: [
+                            { id: branch },
+                            { name: { contains: branch, mode: 'insensitive' } }
+                        ]
+                    }
+                });
+                if (foundBranch) {
+                    cleanData.branchId = foundBranch.id;
+                }
+            }
+            return Object.keys(cleanData).length > 0 ? cleanData : null;
+        };
         return prisma.$transaction(async (tx) => {
             // Update main dealer data
             await tx.dealer.update({
                 where: { id },
                 data: rest
             });
-            // Update billing address if provided
-            if (address) {
+            // Update billing address (1-1)
+            const billingData = await normalizeAddress(address);
+            if (billingData) {
                 const currentDealer = await tx.dealer.findUnique({
                     where: { id },
                     select: { addressId: true }
@@ -51,42 +109,55 @@ export class DealerService {
                 if (currentDealer?.addressId) {
                     await tx.address.update({
                         where: { id: currentDealer.addressId },
-                        data: address
+                        data: billingData
                     });
                 }
                 else {
                     await tx.dealer.update({
                         where: { id },
-                        data: {
-                            address: { create: address }
-                        }
+                        data: { address: { create: billingData } }
                     });
                 }
             }
-            // Update shipping address if provided
-            if (shippingAddress) {
-                const currentDealer = await tx.dealer.findUnique({
-                    where: { id },
-                    select: { shippingAddressId: true }
+            // Sync shipping addresses (1-M)
+            if (Array.isArray(inputShipping)) {
+                const currentAddresses = await tx.address.findMany({
+                    where: { dealerShippingId: id }
                 });
-                if (currentDealer?.shippingAddressId) {
-                    await tx.address.update({
-                        where: { id: currentDealer.shippingAddressId },
-                        data: shippingAddress
-                    });
+                const currentIds = currentAddresses.map((a) => a.id);
+                const comingIds = inputShipping.filter((a) => a.id).map((a) => a.id);
+                // 1. Delete removed
+                const toDelete = currentIds.filter(cid => !comingIds.includes(cid));
+                if (toDelete.length > 0) {
+                    await tx.address.deleteMany({ where: { id: { in: toDelete } } });
                 }
-                else {
-                    await tx.dealer.update({
-                        where: { id },
-                        data: {
-                            shippingAddress: { create: shippingAddress }
-                        }
-                    });
+                // 2. Update/Create
+                for (const addr of inputShipping) {
+                    const cleanData = await normalizeAddress(addr);
+                    if (!cleanData)
+                        continue;
+                    if (addr.id && currentIds.includes(addr.id)) {
+                        await tx.address.update({
+                            where: { id: addr.id },
+                            data: cleanData
+                        });
+                    }
+                    else {
+                        await tx.address.create({
+                            data: {
+                                ...cleanData,
+                                dealerShippingId: id
+                            }
+                        });
+                    }
                 }
             }
             return tx.dealer.findUnique({
                 where: { id },
-                include: { address: true, shippingAddress: true }
+                include: {
+                    address: true,
+                    shippingAddresses: { include: { branch: true } }
+                }
             });
         });
     }

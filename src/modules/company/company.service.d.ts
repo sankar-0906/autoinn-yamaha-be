@@ -25,6 +25,7 @@ export declare class CompanyService {
             } | null;
         } & {
             id: string;
+            branchId: string | null;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
@@ -36,35 +37,36 @@ export declare class CompanyService {
             stateId: string | null;
             countryId: string | null;
             pincode: string | null;
+            dealerShippingId: string | null;
         }) | null;
         branches: {
-            url: string | null;
             id: string;
-            email: string | null;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
             name: string | null;
+            url: string | null;
+            email: string | null;
             addressId: string | null;
-            branchType: string | null;
             gst: string | null;
+            companyId: string | null;
             senderId: string | null;
             lat: number | null;
             lon: number | null;
-            companyId: string | null;
+            googleMapUrl: string | null;
         }[];
     } & {
         id: string;
-        email: string | null;
-        phone: string | null;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         name: string;
+        phone: string | null;
+        email: string | null;
         addressId: string | null;
+        logo: string | null;
         cin: string | null;
         pan: string | null;
-        logo: string | null;
         website: string | null;
         contactPerson: string | null;
     })[]>;
@@ -94,6 +96,7 @@ export declare class CompanyService {
             } | null;
         } & {
             id: string;
+            branchId: string | null;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
@@ -105,41 +108,43 @@ export declare class CompanyService {
             stateId: string | null;
             countryId: string | null;
             pincode: string | null;
+            dealerShippingId: string | null;
         }) | null;
         branches: {
-            url: string | null;
             id: string;
-            email: string | null;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
             name: string | null;
+            url: string | null;
+            email: string | null;
             addressId: string | null;
-            branchType: string | null;
             gst: string | null;
+            companyId: string | null;
             senderId: string | null;
             lat: number | null;
             lon: number | null;
-            companyId: string | null;
+            googleMapUrl: string | null;
         }[];
     } & {
         id: string;
-        email: string | null;
-        phone: string | null;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         name: string;
+        phone: string | null;
+        email: string | null;
         addressId: string | null;
+        logo: string | null;
         cin: string | null;
         pan: string | null;
-        logo: string | null;
         website: string | null;
         contactPerson: string | null;
     }) | null>;
     static create(data: any, createdById?: string): Promise<{
         address: {
             id: string;
+            branchId: string | null;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
@@ -151,25 +156,27 @@ export declare class CompanyService {
             stateId: string | null;
             countryId: string | null;
             pincode: string | null;
+            dealerShippingId: string | null;
         } | null;
     } & {
         id: string;
-        email: string | null;
-        phone: string | null;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         name: string;
+        phone: string | null;
+        email: string | null;
         addressId: string | null;
+        logo: string | null;
         cin: string | null;
         pan: string | null;
-        logo: string | null;
         website: string | null;
         contactPerson: string | null;
     }>;
     static update(id: string, data: any): Promise<{
         address: {
             id: string;
+            branchId: string | null;
             createdById: string | null;
             createdAt: Date;
             updatedAt: Date;
@@ -181,34 +188,35 @@ export declare class CompanyService {
             stateId: string | null;
             countryId: string | null;
             pincode: string | null;
+            dealerShippingId: string | null;
         } | null;
     } & {
         id: string;
-        email: string | null;
-        phone: string | null;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         name: string;
+        phone: string | null;
+        email: string | null;
         addressId: string | null;
+        logo: string | null;
         cin: string | null;
         pan: string | null;
-        logo: string | null;
         website: string | null;
         contactPerson: string | null;
     }>;
     static delete(id: string): Promise<{
         id: string;
-        email: string | null;
-        phone: string | null;
         createdById: string | null;
         createdAt: Date;
         updatedAt: Date;
         name: string;
+        phone: string | null;
+        email: string | null;
         addressId: string | null;
+        logo: string | null;
         cin: string | null;
         pan: string | null;
-        logo: string | null;
         website: string | null;
         contactPerson: string | null;
     }>;

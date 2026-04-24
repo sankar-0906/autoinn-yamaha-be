@@ -1,6 +1,22 @@
 export declare class EmployeeService {
     static getAll(): Promise<({
         profile: ({
+            branch: {
+                id: string;
+                createdById: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                name: string | null;
+                url: string | null;
+                email: string | null;
+                addressId: string | null;
+                gst: string | null;
+                companyId: string | null;
+                senderId: string | null;
+                lat: number | null;
+                lon: number | null;
+                googleMapUrl: string | null;
+            }[];
             bankDetails: {
                 id: string;
                 createdById: string | null;
@@ -22,22 +38,6 @@ export declare class EmployeeService {
                 departmentType: string[];
                 othersAccess: boolean | null;
             } | null;
-            branch: {
-                url: string | null;
-                id: string;
-                email: string | null;
-                createdById: string | null;
-                createdAt: Date;
-                updatedAt: Date;
-                name: string | null;
-                addressId: string | null;
-                branchType: string | null;
-                gst: string | null;
-                senderId: string | null;
-                lat: number | null;
-                lon: number | null;
-                companyId: string | null;
-            }[];
         } & {
             id: string;
             createdById: string | null;
@@ -59,22 +59,38 @@ export declare class EmployeeService {
         }) | null;
     } & {
         id: string;
-        phone2: string | null;
-        email: string | null;
+        createdById: string | null;
+        createdAt: Date;
+        updatedAt: Date;
         phone: string | null;
+        phone2: string | null;
         password: string | null;
         profilePicture: string | null;
         status: boolean | null;
         employee: boolean | null;
+        email: string | null;
         verified: boolean | null;
-        createdById: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         lastLoginAt: Date | null;
     })[]>;
     static getCount(): Promise<number>;
     static getById(id: string): Promise<({
         profile: ({
+            branch: {
+                id: string;
+                createdById: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                name: string | null;
+                url: string | null;
+                email: string | null;
+                addressId: string | null;
+                gst: string | null;
+                companyId: string | null;
+                senderId: string | null;
+                lat: number | null;
+                lon: number | null;
+                googleMapUrl: string | null;
+            }[];
             bankDetails: {
                 id: string;
                 createdById: string | null;
@@ -96,22 +112,6 @@ export declare class EmployeeService {
                 departmentType: string[];
                 othersAccess: boolean | null;
             } | null;
-            branch: {
-                url: string | null;
-                id: string;
-                email: string | null;
-                createdById: string | null;
-                createdAt: Date;
-                updatedAt: Date;
-                name: string | null;
-                addressId: string | null;
-                branchType: string | null;
-                gst: string | null;
-                senderId: string | null;
-                lat: number | null;
-                lon: number | null;
-                companyId: string | null;
-            }[];
         } & {
             id: string;
             createdById: string | null;
@@ -133,21 +133,37 @@ export declare class EmployeeService {
         }) | null;
     } & {
         id: string;
-        phone2: string | null;
-        email: string | null;
+        createdById: string | null;
+        createdAt: Date;
+        updatedAt: Date;
         phone: string | null;
+        phone2: string | null;
         password: string | null;
         profilePicture: string | null;
         status: boolean | null;
         employee: boolean | null;
+        email: string | null;
         verified: boolean | null;
-        createdById: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         lastLoginAt: Date | null;
     }) | null>;
     static create(data: any): Promise<{
         profile: ({
+            branch: {
+                id: string;
+                createdById: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                name: string | null;
+                url: string | null;
+                email: string | null;
+                addressId: string | null;
+                gst: string | null;
+                companyId: string | null;
+                senderId: string | null;
+                lat: number | null;
+                lon: number | null;
+                googleMapUrl: string | null;
+            }[];
             bankDetails: {
                 id: string;
                 createdById: string | null;
@@ -169,22 +185,6 @@ export declare class EmployeeService {
                 departmentType: string[];
                 othersAccess: boolean | null;
             } | null;
-            branch: {
-                url: string | null;
-                id: string;
-                email: string | null;
-                createdById: string | null;
-                createdAt: Date;
-                updatedAt: Date;
-                name: string | null;
-                addressId: string | null;
-                branchType: string | null;
-                gst: string | null;
-                senderId: string | null;
-                lat: number | null;
-                lon: number | null;
-                companyId: string | null;
-            }[];
         } & {
             id: string;
             createdById: string | null;
@@ -206,21 +206,37 @@ export declare class EmployeeService {
         }) | null;
     } & {
         id: string;
-        phone2: string | null;
-        email: string | null;
+        createdById: string | null;
+        createdAt: Date;
+        updatedAt: Date;
         phone: string | null;
+        phone2: string | null;
         password: string | null;
         profilePicture: string | null;
         status: boolean | null;
         employee: boolean | null;
+        email: string | null;
         verified: boolean | null;
-        createdById: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         lastLoginAt: Date | null;
     }>;
     static update(id: string, data: any): Promise<{
         profile: ({
+            branch: {
+                id: string;
+                createdById: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                name: string | null;
+                url: string | null;
+                email: string | null;
+                addressId: string | null;
+                gst: string | null;
+                companyId: string | null;
+                senderId: string | null;
+                lat: number | null;
+                lon: number | null;
+                googleMapUrl: string | null;
+            }[];
             bankDetails: {
                 id: string;
                 createdById: string | null;
@@ -242,22 +258,6 @@ export declare class EmployeeService {
                 departmentType: string[];
                 othersAccess: boolean | null;
             } | null;
-            branch: {
-                url: string | null;
-                id: string;
-                email: string | null;
-                createdById: string | null;
-                createdAt: Date;
-                updatedAt: Date;
-                name: string | null;
-                addressId: string | null;
-                branchType: string | null;
-                gst: string | null;
-                senderId: string | null;
-                lat: number | null;
-                lon: number | null;
-                companyId: string | null;
-            }[];
         } & {
             id: string;
             createdById: string | null;
@@ -279,32 +279,32 @@ export declare class EmployeeService {
         }) | null;
     } & {
         id: string;
-        phone2: string | null;
-        email: string | null;
+        createdById: string | null;
+        createdAt: Date;
+        updatedAt: Date;
         phone: string | null;
+        phone2: string | null;
         password: string | null;
         profilePicture: string | null;
         status: boolean | null;
         employee: boolean | null;
+        email: string | null;
         verified: boolean | null;
-        createdById: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         lastLoginAt: Date | null;
     }>;
     static delete(id: string): Promise<{
         id: string;
-        phone2: string | null;
-        email: string | null;
+        createdById: string | null;
+        createdAt: Date;
+        updatedAt: Date;
         phone: string | null;
+        phone2: string | null;
         password: string | null;
         profilePicture: string | null;
         status: boolean | null;
         employee: boolean | null;
+        email: string | null;
         verified: boolean | null;
-        createdById: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         lastLoginAt: Date | null;
     }>;
 }

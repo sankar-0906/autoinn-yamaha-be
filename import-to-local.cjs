@@ -106,6 +106,7 @@ async function importData() {
         await insertRecords(prismaTarget.employeeProfile, data.employeeProfiles, 'EmployeeProfile');
         await insertRecords(prismaTarget.vehicleMaster, data.vehicleMasters, 'VehicleMaster');
         await insertRecords(prismaTarget.vehiclePrice, data.vehiclePrices, 'VehiclePrice');
+        await insertRecords(prismaTarget.vehicleColor, data.vehicleColors, 'VehicleColor');
         await insertRecords(prismaTarget.image, data.images, 'Image');
         await insertRecords(prismaTarget.partsMaster, data.partsMasters, 'PartsMaster');
         await insertRecords(prismaTarget.multiVehicle, data.multiVehicles, 'MultiVehicle');
@@ -115,6 +116,9 @@ async function importData() {
         await insertRecords(prismaTarget.branchContacts, data.branchContacts, 'BranchContacts');
         await insertRecords(prismaTarget.idCreation, data.idCreations, 'IdCreation');
         await insertRecords(prismaTarget.frameNumber, data.frameNumbers, 'FrameNumber');
+        await insertRecords(prismaTarget.supplier, data.suppliers, 'Supplier');
+        await insertRecords(prismaTarget.supplierContact, data.supplierContacts, 'SupplierContact');
+        await insertRecords(prismaTarget.serviceDetail, data.serviceDetails, 'ServiceDetail');
 
         console.log('✅ All data imported successfully!');
     } catch (error) {
