@@ -3,14 +3,15 @@ import { sendError } from '../utils/response.js';
 import { ENV } from '../config/env.js';
 const JWT_SECRET = ENV.JWT_SECRET;
 export const authenticate = (req, res, next) => {
-    const authHeader = req.headers.authorization;
+    const authReq = req;
+    const authHeader = authReq.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return sendError(res, 'Authorization token missing or invalid', 401);
     }
     const token = authHeader.split(' ')[1];
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
+        authReq.user = decoded;
         next();
     }
     catch (error) {
