@@ -1,10 +1,8 @@
 import { Queue, Worker, QueueEvents } from 'bullmq';
 import { Redis } from 'ioredis';
-import dotenv from 'dotenv';
+import { ENV } from '../config/env.js';
 
-dotenv.config();
-
-const REDIS_URL = process.env.REDIS_URL;
+const REDIS_URL = ENV.REDIS_URL;
 
 if (!REDIS_URL) {
     console.warn('⚠️ Warning: REDIS_URL is not defined. Redis-based features (OCR queues) will not work.');

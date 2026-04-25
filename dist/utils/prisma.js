@@ -1,10 +1,9 @@
 import { PrismaClient } from '@prisma/client';
-import dotenv from 'dotenv';
-dotenv.config();
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
+import { ENV } from '../config/env.js';
 const pool = new pg.Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: ENV.DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
     }
