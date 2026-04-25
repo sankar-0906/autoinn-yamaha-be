@@ -281,17 +281,11 @@ export class VehicleStockInwardService {
         let dealer = null;
         if (dealerName && dealerName !== 'UNKNOWN') {
             dealer = await (prisma as any).dealer.findFirst({
-                where: { name: { contains: dealerName, mode: 'insensitive' } }
+                where: { name: { contains: dealerName.trim(), mode: 'insensitive' } }
             });
 
             if (!dealer) {
-                // Auto-create dealer if not found
-                dealer = await (prisma as any).dealer.create({
-                    data: {
-                        name: dealerName,
-                        status: 'ACTIVE'
-                    }
-                });
+                throw new Error(`Dealer "${dealerName}" not found in Dealer Master. Please create the dealer first.`);
             }
         }
         const dealerIdToSet = dealer?.id;
@@ -521,17 +515,10 @@ export class VehicleStockInwardService {
         let dealer = null;
         if (dealerName && dealerName !== 'UNKNOWN') {
             dealer = await (prisma as any).dealer.findFirst({
-                where: { name: { contains: dealerName, mode: 'insensitive' } }
+                where: { name: { contains: dealerName.trim(), mode: 'insensitive' } }
             });
-
             if (!dealer) {
-                // Auto-create dealer if not found
-                dealer = await (prisma as any).dealer.create({
-                    data: {
-                        name: dealerName,
-                        status: 'ACTIVE'
-                    }
-                });
+                throw new Error(`Dealer "${dealerName}" not found in Dealer Master. Please create the dealer first.`);
             }
         }
         const dealerIdToSet = dealer?.id;
