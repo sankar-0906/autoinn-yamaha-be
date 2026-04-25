@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { sendError } from '../utils/response.js';
 import { ENV } from '../config/env.js';
@@ -15,8 +15,8 @@ export const authenticate = (
     res: Response,
     next: NextFunction
 ) => {
-    const authReq = req as AuthRequest;
-    const authHeader = authReq.headers.authorization;
+    const authReq = req as any;
+    const authHeader = authReq.headers?.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return sendError(res, 'Authorization token missing or invalid', 401);
