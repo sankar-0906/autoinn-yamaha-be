@@ -4,13 +4,24 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+const REDIS_URL = process.env.REDIS_URL;
 
-export const connection = new Redis(REDIS_URL, {
+if (!REDIS_URL) {
+    console.warn('⚠️ Warning: REDIS_URL is not defined. Redis-based features (OCR queues) will not work.');
+}
+
+export const connection = REDIS_URL ? new Redis(REDIS_URL, {
     maxRetriesPerRequest: null,
-});
+    lazyConnect: true, // Only connect when used
+}) : null;
 
-export const pdfOcrQueue = new Queue('pdf-ocr', {
+if (connection) {
+    connection.on('error', (err) => {
+        console.error('❌ Redis Connection Error:', err.message);
+    });
+}
+
+export const pdfOcrQueue = connection ? new Queue('pdf-ocr', {
     connection,
     defaultJobOptions: {
         attempts: 3,
@@ -21,6 +32,6 @@ export const pdfOcrQueue = new Queue('pdf-ocr', {
         removeOnComplete: true,
         removeOnFail: false,
     },
-});
+}) : null;
 
-export const pdfOcrQueueEvents = new QueueEvents('pdf-ocr', { connection });
+export const pdfOcrQueueEvents = connection ? new QueueEvents('pdf-ocr', { connection }) : null;

@@ -13,7 +13,7 @@ export interface OcrJobData {
     filePath: string;
 }
 
-export const pdfOcrWorker = new Worker<OcrJobData>(
+export const pdfOcrWorker = connection ? new Worker<OcrJobData>(
     'pdf-ocr',
     async (job: Job<OcrJobData>) => {
         const { filePath } = job.data;
@@ -48,12 +48,14 @@ export const pdfOcrWorker = new Worker<OcrJobData>(
         }
     },
     { connection }
-);
+) : null;
 
-pdfOcrWorker.on('completed', (job) => {
-    console.log(`[OCR Worker] Job ${job.id} completed!`);
-});
+if (pdfOcrWorker) {
+    pdfOcrWorker.on('completed', (job) => {
+        console.log(`[OCR Worker] Job ${job.id} completed!`);
+    });
 
-pdfOcrWorker.on('failed', (job, err) => {
-    console.error(`[OCR Worker] Job ${job?.id} failed with error: ${err.message}`);
-});
+    pdfOcrWorker.on('failed', (job, err) => {
+        console.error(`[OCR Worker] Job ${job?.id} failed with error: ${err.message}`);
+    });
+}
