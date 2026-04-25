@@ -7,7 +7,10 @@
         "moduleResolution": "Node",
         "esModuleInterop": true,
         "strict": false,
-        "noImplicitAny": false
+        "noImplicitAny": false,
+        "strictNullChecks": false,
+        "skipLibCheck": true,
+        "noPropertyAccessFromIndexSignature": false
     },
     "include": [
         "src"
