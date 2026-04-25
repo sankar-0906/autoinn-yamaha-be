@@ -1,8 +1,10 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import prisma from '../../utils/prisma.js';
+import { ENV } from '../../../config/env.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
+const JWT_SECRET = ENV.JWT_SECRET;
+
 const JWT_EXPIRES_IN = '1d';
 
 export class AuthService {
@@ -42,10 +44,12 @@ export class AuthService {
             }
         }
 
+
         if (!authenticatedUser) {
             console.log('Login Error: Password mismatch for all matching phone records');
             throw new Error('Invalid credentials');
         }
+
 
         const user = authenticatedUser;
         const token = this.generateToken({ id: user.id, phone: user.phone });
