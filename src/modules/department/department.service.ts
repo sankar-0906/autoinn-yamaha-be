@@ -1,16 +1,35 @@
 import prisma from '../../utils/prisma.js';
 
 export class DepartmentService {
-    static async getAll() {
-        return prisma.department.findMany({
-            include: {
-                roleAccess: { include: { access: true } },
-                createdBy: true,
-                _count: {
-                    select: { employeeProfiles: true }
-                }
-            }
-        });
+    static async getAll(query: any = {}) {
+        const { page = 1, limit = 10, search = '', searchString = '' } = query;
+        const skip = (Number(page) - 1) * Number(limit);
+        const take = Number(limit);
+        const effectiveSearch = String(search || searchString || '');
+
+        const where: any = {};
+        if (effectiveSearch) {
+            where.role = { contains: effectiveSearch, mode: 'insensitive' };
+        }
+
+        const [departments, total] = await Promise.all([
+            prisma.department.findMany({
+                where,
+                skip,
+                take,
+                include: {
+                    roleAccess: { include: { access: true } },
+                    createdBy: true,
+                    _count: {
+                        select: { employeeProfiles: true }
+                    }
+                },
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.department.count({ where })
+        ]);
+
+        return { departments, total, page: Number(page), limit: take };
     }
 
     static async getById(id: string) {

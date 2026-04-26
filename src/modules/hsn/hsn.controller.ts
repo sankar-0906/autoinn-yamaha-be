@@ -18,8 +18,8 @@ export class HsnController {
             const query = Object.keys(req.body).length > 0 ? req.body : req.query;
             const data = await HsnService.getAllHsns(query);
             return sendSuccess(res, 'HSNs fetched successfully', {
-                count: data.total,
-                hsn: data.hsns,
+                total: data.total,
+                hsns: data.hsns,
                 page: data.page,
                 limit: data.limit
             });

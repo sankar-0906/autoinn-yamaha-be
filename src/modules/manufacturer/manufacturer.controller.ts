@@ -6,8 +6,9 @@ import prisma from '../../utils/prisma.js';
 export class ManufacturerController {
     static async getAll(req: Request, res: Response, next: NextFunction) {
         try {
-            const manufacturers = await ManufacturerService.getAll();
-            return sendSuccess(res, 'Manufacturers fetched successfully', manufacturers);
+            const query = Object.keys(req.body).length > 0 ? req.body : req.query;
+            const result = await ManufacturerService.getAll(query);
+            return sendSuccess(res, 'Manufacturers fetched successfully', result);
         } catch (error: any) {
             return sendError(res, error.message);
         }
