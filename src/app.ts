@@ -12,9 +12,14 @@ const app = express();
 
 // Middlewares
 app.use(cors({
-    origin: [ENV.FRONTEND_URL, 'http://localhost:5173'],
+    origin: [
+        ENV.FRONTEND_URL,
+        'http://localhost:5173',
+        'https://autoinn-yamaha-hyi036xwg-sankarcodings-projects.vercel.app'
+    ],
     credentials: true
 }));
+app.options("*", cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
