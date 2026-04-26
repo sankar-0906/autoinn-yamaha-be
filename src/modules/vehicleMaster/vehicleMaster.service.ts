@@ -1,20 +1,46 @@
 import prisma from '../../utils/prisma.js';
 
 export class VehicleMasterService {
-    static async getAll() {
-        const vehicles = await prisma.vehicleMaster.findMany({
-            include: {
-                manufacturer: true,
-                images: true,
-                prices: {
-                    include: { colors: true }
+    static async getAll(query: any = {}) {
+        const { page = 1, limit = 10, search = '', searchString = '' } = query;
+        const skip = (Number(page) - 1) * Number(limit);
+        const take = Number(limit);
+        const effectiveSearch = String(search || searchString || '');
+
+        const where: any = {};
+        if (effectiveSearch) {
+            where.OR = [
+                { modelName: { contains: effectiveSearch, mode: 'insensitive' } },
+                { modelCode: { contains: effectiveSearch, mode: 'insensitive' } }
+            ];
+        }
+
+        const [vehicles, total] = await Promise.all([
+            prisma.vehicleMaster.findMany({
+                where,
+                skip,
+                take,
+                include: {
+                    manufacturer: true,
+                    images: true,
+                    prices: {
+                        include: { colors: true }
+                    },
+                    files: true,
+                    hsn: true,
+                    services: true
                 },
-                files: true,
-                hsn: true,
-                services: true
-            }
-        });
-        return vehicles.map(v => this.transformResponse(v));
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.vehicleMaster.count({ where })
+        ]);
+
+        return {
+            vehicles: vehicles.map(v => this.transformResponse(v)),
+            total,
+            page: Number(page),
+            limit: take
+        };
     }
 
     private static transformResponse(vehicle: any) {

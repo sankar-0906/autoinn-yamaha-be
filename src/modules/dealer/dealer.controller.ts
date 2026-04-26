@@ -6,8 +6,9 @@ import prisma from '../../utils/prisma.js';
 export class DealerController {
     static async getAll(req: Request, res: Response, next: NextFunction) {
         try {
-            const dealers = await DealerService.getAll();
-            return sendSuccess(res, 'Dealers fetched successfully', dealers);
+            const query = Object.keys(req.body).length > 0 ? req.body : req.query;
+            const result = await DealerService.getAll(query);
+            return sendSuccess(res, 'Dealers fetched successfully', result);
         } catch (error: any) {
             return sendError(res, error.message);
         }

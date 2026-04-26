@@ -49,7 +49,7 @@ export class BranchService {
             })
         );
 
-        return { branch: branchesWithCounts, count };
+        return { branch: branchesWithCounts, total: count };
     }
 
     private static async getCountsForBranch(branchId: string) {

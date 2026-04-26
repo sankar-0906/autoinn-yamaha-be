@@ -6,17 +6,13 @@ import prisma from '../../utils/prisma.js';
 export class VehicleMasterController {
     static async getAll(req: Request, res: Response, next: NextFunction) {
         try {
-            const vehicles = await VehicleMasterService.getAll();
-            return res.status(200).json({
-                code: 200,
-                response: {
-                    code: 200,
-                    msg: 'VehiclesMaster fetched',
-                    data: {
-                        count: vehicles.length,
-                        VehicleMaster: vehicles
-                    }
-                }
+            const query = Object.keys(req.body).length > 0 ? req.body : req.query;
+            const result = await VehicleMasterService.getAll(query);
+            return sendSuccess(res, 'Vehicles fetched successfully', {
+                total: result.total,
+                vehicles: result.vehicles,
+                page: result.page,
+                limit: result.limit
             });
         } catch (error: any) {
             return sendError(res, error.message);

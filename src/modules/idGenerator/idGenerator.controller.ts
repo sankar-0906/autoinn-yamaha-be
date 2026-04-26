@@ -4,8 +4,9 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 
 export const getAllIdGenerators = async (req: Request, res: Response) => {
     try {
-        const data = await IdGeneratorService.getAll();
-        return sendSuccess(res, 'ID Generators fetched successfully', data);
+        const query = Object.keys(req.body).length > 0 ? req.body : req.query;
+        const result = await IdGeneratorService.getAll(query);
+        return sendSuccess(res, 'ID Generators fetched successfully', result);
     } catch (error: any) {
         return sendError(res, error.message);
     }
