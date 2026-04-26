@@ -4,21 +4,22 @@ import { VehicleDataRecoveryService } from './vehicleStockInward.recovery.servic
 import multer from 'multer';
 
 interface MulterRequest extends Request {
-    file?: Express.Multer.File;
+    file?: any;
 }
 
 export class VehicleStockInwardController {
-    static async processPdf(req: MulterRequest, res: Response) {
+    static async processPdf(req: Request, res: Response) {
+        const multerReq = req as MulterRequest;
         console.log('[VehicleStockInwardController] processPdf started');
         try {
-            if (!req.file) {
+            if (!multerReq.file) {
                 console.error('[VehicleStockInwardController] No file uploaded');
                 return res.status(400).json({ success: false, message: 'No file uploaded' });
             }
 
-            console.log(`[VehicleStockInwardController] File received: ${req.file.originalname}, Path: ${req.file.path}, Size: ${req.file.size} bytes`);
+            console.log(`[VehicleStockInwardController] File received: ${multerReq.file.originalname}, Path: ${multerReq.file.path}, Size: ${multerReq.file.size} bytes`);
 
-            const data = await VehicleStockInwardService.processPdf(req.file.path);
+            const data = await VehicleStockInwardService.processPdf(multerReq.file.path);
 
             console.log(`[VehicleStockInwardController] PDF processing successful. Sending ${data.VEHICLES.length} vehicles to frontend.`);
             res.json({ success: true, data });

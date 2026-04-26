@@ -3,19 +3,46 @@ import prisma from '../../utils/prisma.js';
 import { IdGeneratorService } from '../idGenerator/idGenerator.service.js';
 
 export class EmployeeService {
-    static async getAll() {
-        return prisma.user.findMany({
-            where: { employee: true },
-            include: {
-                profile: {
-                    include: {
-                        department: true,
-                        branch: true,
-                        bankDetails: true
+    static async getAll(query: any = {}) {
+        const { page = 1, limit = 10, search = '', searchString = '', activeTab = 'active' } = query;
+        const skip = (Number(page) - 1) * Number(limit);
+        const take = Number(limit);
+        const effectiveSearch = String(search || searchString || '');
+
+        const status = activeTab === 'active';
+
+        const where: any = {
+            employee: true,
+            status: status
+        };
+
+        if (effectiveSearch) {
+            where.OR = [
+                { profile: { employeeName: { contains: effectiveSearch, mode: 'insensitive' } } },
+                { phone: { contains: effectiveSearch } }
+            ];
+        }
+
+        const [employees, total] = await Promise.all([
+            prisma.user.findMany({
+                where,
+                skip,
+                take,
+                include: {
+                    profile: {
+                        include: {
+                            department: true,
+                            branch: true,
+                            bankDetails: true
+                        }
                     }
-                }
-            }
-        });
+                },
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.user.count({ where })
+        ]);
+
+        return { employees, total, page: Number(page), limit: take };
     }
 
     static async getCount() {

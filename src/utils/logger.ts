@@ -15,6 +15,8 @@ const colors = {
     bold: '\x1b[1m',
 };
 
+import { ENV } from '../config/env.js';
+
 function timestamp(): string {
     return new Date().toISOString();
 }
@@ -38,7 +40,7 @@ export const logger = {
         console.error(formatMessage(`${colors.red}ERROR${colors.reset}`, message, meta));
     },
     debug(message: string, meta?: any) {
-        if (process.env.LOG_LEVEL === 'debug') {
+        if (ENV.LOG_LEVEL === 'debug') {
             console.debug(formatMessage(`${colors.cyan}DEBUG${colors.reset}`, message, meta));
         }
     },

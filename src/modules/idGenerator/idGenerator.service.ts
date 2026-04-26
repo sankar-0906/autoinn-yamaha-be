@@ -1,13 +1,35 @@
 import prisma from '../../utils/prisma.js';
 
 export class IdGeneratorService {
-    static async getAll() {
-        return prisma.idCreation.findMany({
-            include: {
-                branch: true,
-                createdBy: true
-            }
-        });
+    static async getAll(query: any = {}) {
+        const { page = 1, limit = 10, search = '', searchString = '' } = query;
+        const skip = (Number(page) - 1) * Number(limit);
+        const take = Number(limit);
+        const effectiveSearch = String(search || searchString || '');
+
+        const where: any = {};
+        if (effectiveSearch) {
+            where.OR = [
+                { subModule: { contains: effectiveSearch, mode: 'insensitive' } },
+                { text: { contains: effectiveSearch, mode: 'insensitive' } }
+            ];
+        }
+
+        const [idCreations, total] = await Promise.all([
+            prisma.idCreation.findMany({
+                where,
+                skip,
+                take,
+                include: {
+                    branch: true,
+                    createdBy: true
+                },
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.idCreation.count({ where })
+        ]);
+
+        return { idCreations, total, page: Number(page), limit: take };
     }
 
     static async getById(id: string) {

@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import prisma from '../../utils/prisma.js';
-import { ENV } from '../../../config/env.js';
+import { ENV } from '../../config/env.js';
 
 const JWT_SECRET = ENV.JWT_SECRET;
 

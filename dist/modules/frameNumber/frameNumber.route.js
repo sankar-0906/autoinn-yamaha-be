@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import * as controller from './frameNumber.controller.js';
+import { validate } from '../../middlewares/validate.js';
+import { createFrameNumberSchema, updateFrameNumberSchema } from './frameNumber.validation.js';
+import { authenticate } from '../../middlewares/auth.js';
+const router = Router();
+router.use(authenticate);
+router.get('/', controller.getAllFrameNumbers);
+router.get('/:id', controller.getFrameNumberById);
+router.post('/', validate(createFrameNumberSchema), controller.createFrameNumber);
+router.put('/:id', validate(updateFrameNumberSchema), controller.updateFrameNumber);
+router.delete('/:id', controller.deleteFrameNumber);
+export default router;

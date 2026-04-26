@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import type { Request, Response, NextFunction } from 'express';
-import { ENV } from '../config/env.js';
+import { ENV } from './config/env.js';
 
 import { sendError } from './utils/response.js';
 import logger from './utils/logger.js';

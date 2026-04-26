@@ -1,18 +1,40 @@
 import prisma from '../../utils/prisma.js';
 
 export class DealerService {
-    static async getAll() {
-        return prisma.dealer.findMany({
-            include: {
-                address: {
-                    include: { district: true, state: true, country: true }
+    static async getAll(query: any = {}) {
+        const { page = 1, limit = 10, search = '', searchString = '' } = query;
+        const skip = (Number(page) - 1) * Number(limit);
+        const take = Number(limit);
+        const effectiveSearch = String(search || searchString || '');
+
+        const where: any = {};
+        if (effectiveSearch) {
+            where.OR = [
+                { name: { contains: effectiveSearch, mode: 'insensitive' } },
+                { email: { contains: effectiveSearch, mode: 'insensitive' } }
+            ];
+        }
+
+        const [dealers, total] = await Promise.all([
+            prisma.dealer.findMany({
+                where,
+                skip,
+                take,
+                include: {
+                    address: {
+                        include: { district: true, state: true, country: true }
+                    },
+                    shippingAddresses: {
+                        include: { branch: true, district: true, state: true, country: true }
+                    },
+                    createdBy: true
                 },
-                shippingAddresses: {
-                    include: { branch: true, district: true, state: true, country: true }
-                },
-                createdBy: true
-            }
-        });
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.dealer.count({ where })
+        ]);
+
+        return { dealers, total, page: Number(page), limit: take };
     }
 
     static async getById(id: string) {

@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { DealerController } from './dealer.controller.js';
+import { validate } from '../../middlewares/validate.js';
+import { createDealerSchema, updateDealerSchema } from './dealer.validation.js';
+import { authenticate } from '../../middlewares/auth.js';
+const router = Router();
+router.use(authenticate);
+router.get('/', DealerController.getAll);
+router.get('/:id', DealerController.getById);
+router.post('/', validate(createDealerSchema), DealerController.create);
+router.put('/:id', validate(updateDealerSchema), DealerController.update);
+router.delete('/:id', DealerController.delete);
+export default router;

@@ -1,13 +1,36 @@
 import prisma from '../../utils/prisma.js';
 
 export class FrameNumberService {
-    static async getAll() {
-        return prisma.frameNumber.findMany({
-            include: {
-                manufacturer: true,
-                createdBy: true
-            }
-        });
+    static async getAll(query: any = {}) {
+        const { page = 1, limit = 10, search = '', searchString = '' } = query;
+        const skip = (Number(page) - 1) * Number(limit);
+        const take = Number(limit);
+        const effectiveSearch = String(search || searchString || '');
+
+        const where: any = {};
+        if (effectiveSearch) {
+            where.OR = [
+                { inferredField: { contains: effectiveSearch, mode: 'insensitive' } },
+                { inputValue: { contains: effectiveSearch, mode: 'insensitive' } },
+                { manufacturer: { name: { contains: effectiveSearch, mode: 'insensitive' } } }
+            ];
+        }
+
+        const [frameNumbers, total] = await Promise.all([
+            prisma.frameNumber.findMany({
+                where,
+                skip,
+                take,
+                include: {
+                    manufacturer: true,
+                    createdBy: true
+                },
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.frameNumber.count({ where })
+        ]);
+
+        return { frameNumbers, total, page: Number(page), limit: take };
     }
 
     static async getById(id: string) {
