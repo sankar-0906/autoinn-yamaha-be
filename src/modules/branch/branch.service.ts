@@ -2,59 +2,64 @@ import prisma from '../../utils/prisma.js';
 
 export class BranchService {
     static async getAllBranches(params: { page?: number; size?: number; searchString?: string }) {
-        const { page = 1, size = 10, searchString = '' } = params;
-        const skip = (Number(page) - 1) * Number(size);
+        try {
+            const { page = 1, size = 10, searchString = '' } = params;
+            const skip = (Number(page) - 1) * Number(size);
 
-        const where: any = searchString
-            ? {
-                OR: [
-                    { name: { contains: searchString, mode: 'insensitive' } },
-                    { gst: { contains: searchString, mode: 'insensitive' } },
-                    { email: { contains: searchString, mode: 'insensitive' } },
-                ],
-            }
-            : {};
+            const where: any = searchString
+                ? {
+                    OR: [
+                        { name: { contains: searchString, mode: 'insensitive' } },
+                        { gst: { contains: searchString, mode: 'insensitive' } },
+                        { email: { contains: searchString, mode: 'insensitive' } },
+                    ],
+                }
+                : {};
 
-        const [branch, count] = await Promise.all([
-            prisma.branch.findMany({
-                where,
-                skip,
-                take: Number(size),
-                include: {
-                    address: {
-                        include: {
-                            district: true,
-                            state: true,
-                            country: true,
+            const [branch, count] = await Promise.all([
+                prisma.branch.findMany({
+                    where,
+                    skip,
+                    take: Number(size),
+                    include: {
+                        address: {
+                            include: {
+                                district: true,
+                                state: true,
+                                country: true,
+                            },
+                        },
+                        contacts: true,
+                        manufacturer: true,
+                        personInCharge: {
+                            include: {
+                                profile: true,
+                            },
                         },
                     },
-                    contacts: true,
-                    manufacturer: true,
-                    personInCharge: {
-                        include: {
-                            profile: true,
-                        },
-                    },
-                },
-                orderBy: { createdAt: 'desc' },
-            }),
-            prisma.branch.count({ where }),
-        ]);
+                    orderBy: { createdAt: 'desc' },
+                }),
+                prisma.branch.count({ where }),
+            ]);
 
-        // Calculate active user counts for each branch using the helper
-        const branchesWithCounts = await Promise.all(
-            branch.map(async (b) => {
-                const counts = await this.getCountsForBranch(b.id);
-                return { ...b, ...counts };
-            })
-        );
+            // Calculate active user counts for each branch using the helper
+            const branchesWithCounts = await Promise.all(
+                branch.map(async (b) => {
+                    const counts = await this.getCountsForBranch(b.id);
+                    return { ...b, ...counts };
+                })
+            );
 
-        return { branch: branchesWithCounts, total: count };
+            return { branch: branchesWithCounts, total: count };
+        } catch (error: any) {
+            console.error('[BranchService.getAllBranches] Error:', error);
+            throw error;
+        }
     }
 
     private static async getCountsForBranch(branchId: string) {
-        const [activeCount, inactiveCount] = await Promise.all([
-            prisma.user.count({
+        try {
+            const activeCount = await prisma.user.count({
                 where: {
                     status: true,
                     OR: [
@@ -62,8 +67,9 @@ export class BranchService {
                         { branchInChargeOf: { some: { id: branchId } } },
                     ],
                 },
-            }),
-            prisma.user.count({
+            });
+
+            const inactiveCount = await prisma.user.count({
                 where: {
                     status: { not: true },
                     OR: [
@@ -71,14 +77,22 @@ export class BranchService {
                         { branchInChargeOf: { some: { id: branchId } } },
                     ],
                 },
-            }),
-        ]);
+            });
 
-        return {
-            count: activeCount,
-            inactiveCount,
-            totalCount: activeCount + inactiveCount,
-        };
+            return {
+                count: activeCount,
+                inactiveCount,
+                totalCount: activeCount + inactiveCount,
+            };
+        } catch (error) {
+            console.error(`[BranchService.getCountsForBranch] Error for branch ${branchId}:`, error);
+            // Return 0s instead of throwing to prevent the whole list from failing
+            return {
+                count: 0,
+                inactiveCount: 0,
+                totalCount: 0,
+            };
+        }
     }
 
     static async getBranchById(id: string) {
