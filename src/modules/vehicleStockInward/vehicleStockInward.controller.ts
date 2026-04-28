@@ -3,6 +3,7 @@ import { VehicleStockInwardService } from './vehicleStockInward.service.js';
 import { VehicleDataRecoveryService } from './vehicleStockInward.recovery.service.js';
 import multer from 'multer';
 import { handleApiError } from '../../utils/errorHandler.js';
+import { jobCache } from '../../utils/jobCache.js';
 
 interface MulterRequest extends Request {
     file?: any;
@@ -20,12 +21,42 @@ export class VehicleStockInwardController {
 
             console.log(`[VehicleStockInwardController] File received: ${multerReq.file.originalname}, Path: ${multerReq.file.path}, Size: ${multerReq.file.size} bytes`);
 
-            const data = await VehicleStockInwardService.processPdf(multerReq.file.path);
+            // Create async job and respond immediately
+            const jobId = jobCache.createJob();
+            console.log(`[VehicleStockInwardController] Created job ${jobId} for PDF processing`);
+            
+            res.json({ success: true, jobId, status: 'processing' });
 
-            console.log(`[VehicleStockInwardController] PDF processing successful. Sending ${data.VEHICLES.length} vehicles to frontend.`);
-            res.json({ success: true, data });
+            // Process PDF in background
+            VehicleStockInwardService.processPdf(multerReq.file.path)
+                .then(data => {
+                    console.log(`[VehicleStockInwardController] Job ${jobId} completed. Found ${data.VEHICLES.length} vehicles.`);
+                    jobCache.setJobComplete(jobId, data);
+                })
+                .catch(error => {
+                    console.error(`[VehicleStockInwardController] Job ${jobId} failed:`, error);
+                    jobCache.setJobError(jobId, error.message || 'Unknown error occurred');
+                });
         } catch (error: any) {
-            console.error('[VehicleStockInwardController] Error processing PDF:', error);
+            console.error('[VehicleStockInwardController] Error starting PDF processing:', error);
+            return handleApiError(res, error);
+        }
+    }
+
+    static async getJobStatus(req: Request, res: Response) {
+        try {
+            const { jobId } = req.params;
+            if (!jobId) {
+                return res.status(400).json({ success: false, message: 'Job ID is required' });
+            }
+
+            const job = jobCache.getJob(jobId);
+            if (!job) {
+                return res.json({ status: 'processing' }); // Job not found, assume still processing
+            }
+
+            res.json(job);
+        } catch (error: any) {
             return handleApiError(res, error);
         }
     }
