@@ -1,9 +1,25 @@
 import prisma from '../../utils/prisma.js';
 export class ManufacturerService {
-    static async getAll() {
-        return prisma.manufacturer.findMany({
-            include: { address: true }
-        });
+    static async getAll(query = {}) {
+        const { page = 1, limit = 10, search = '', searchString = '' } = query;
+        const skip = (Number(page) - 1) * Number(limit);
+        const take = Number(limit);
+        const effectiveSearch = String(search || searchString || '');
+        const where = {};
+        if (effectiveSearch) {
+            where.name = { contains: effectiveSearch, mode: 'insensitive' };
+        }
+        const [manufacturers, total] = await Promise.all([
+            prisma.manufacturer.findMany({
+                where,
+                skip,
+                take,
+                include: { address: true },
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.manufacturer.count({ where })
+        ]);
+        return { manufacturers, total, page: Number(page), limit: take };
     }
     static async getById(id) {
         return prisma.manufacturer.findUnique({

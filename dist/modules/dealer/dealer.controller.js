@@ -3,8 +3,9 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 export class DealerController {
     static async getAll(req, res, next) {
         try {
-            const dealers = await DealerService.getAll();
-            return sendSuccess(res, 'Dealers fetched successfully', dealers);
+            const query = Object.keys(req.body).length > 0 ? req.body : req.query;
+            const result = await DealerService.getAll(query);
+            return sendSuccess(res, 'Dealers fetched successfully', result);
         }
         catch (error) {
             return sendError(res, error.message);

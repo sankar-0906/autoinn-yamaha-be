@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { PartsMasterService } from './partsMaster.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import prisma from '../../utils/prisma.js';
+import { handleApiError } from '../../utils/errorHandler.js';
 
 export class PartsMasterController {
     static async getAll(req: Request, res: Response, next: NextFunction) {

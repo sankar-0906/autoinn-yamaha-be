@@ -2,8 +2,9 @@ import { FrameNumberService } from './frameNumber.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 export const getAllFrameNumbers = async (req, res) => {
     try {
-        const data = await FrameNumberService.getAll();
-        return sendSuccess(res, 'Frame Numbers fetched successfully', data);
+        const query = Object.keys(req.body).length > 0 ? req.body : req.query;
+        const result = await FrameNumberService.getAll(query);
+        return sendSuccess(res, 'Frame Numbers fetched successfully', result);
     }
     catch (error) {
         return sendError(res, error.message);

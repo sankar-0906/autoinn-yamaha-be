@@ -14,6 +14,11 @@ export class FrameNumberService {
                 { inputValue: { contains: effectiveSearch, mode: 'insensitive' } },
                 { manufacturer: { name: { contains: effectiveSearch, mode: 'insensitive' } } }
             ];
+
+            const numericSearch = Number(effectiveSearch);
+            if (!isNaN(numericSearch)) {
+                where.OR.push({ position: numericSearch });
+            }
         }
 
         const [frameNumbers, total] = await Promise.all([

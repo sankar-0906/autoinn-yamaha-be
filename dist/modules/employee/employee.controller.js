@@ -3,24 +3,22 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 export class EmployeeController {
     static async getAll(req, res, next) {
         try {
-            const employees = await EmployeeService.getAll();
-            // Return exact format that autoinn frontend expects
+            const query = Object.keys(req.body).length > 0 ? req.body : req.query;
+            const result = await EmployeeService.getAll(query);
             return res.json({
                 code: 200,
-                msg: "All users fetched",
+                msg: "Users fetched",
                 data: {
-                    count: employees.length,
-                    users: employees,
-                    user: req.user?.id || null
+                    count: result.total,
+                    users: result.employees,
+                    user: req.user?.id || null,
+                    page: result.page,
+                    limit: result.limit
                 }
             });
         }
         catch (error) {
-            return res.json({
-                code: 500,
-                message: "Error getting users",
-                data: error
-            });
+            return sendError(res, error.message);
         }
     }
     static async getCount(req, res, next) {

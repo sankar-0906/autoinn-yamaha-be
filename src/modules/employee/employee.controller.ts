@@ -3,6 +3,7 @@ import { EmployeeService } from './employee.service.js';
 import bcrypt from 'bcrypt';
 import prisma from '../../utils/prisma.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
+import { handleApiError } from '../../utils/errorHandler.js';
 
 export class EmployeeController {
     static async getAll(req: Request, res: Response, next: NextFunction) {

@@ -4,7 +4,7 @@ import { ENV } from '../config/env.js';
 const JWT_SECRET = ENV.JWT_SECRET;
 export const authenticate = (req, res, next) => {
     const authReq = req;
-    const authHeader = authReq.headers.authorization;
+    const authHeader = authReq.headers?.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return sendError(res, 'Authorization token missing or invalid', 401);
     }

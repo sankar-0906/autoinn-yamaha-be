@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { sendSuccess, sendError } from '../../utils/response.js';
+import { handleApiError } from '../../utils/errorHandler.js';
 
 export class UploadController {
     static async uploadImage(req: Request, res: Response) {

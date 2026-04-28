@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { FrameNumberService } from './frameNumber.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
+import { handleApiError } from '../../utils/errorHandler.js';
 
 export const getAllFrameNumbers = async (req: Request, res: Response) => {
     try {

@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { RoleAccessService } from './roleAccess.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
+import { handleApiError } from '../../utils/errorHandler.js';
 
 export class RoleAccessController {
     static async create(req: Request, res: Response) {

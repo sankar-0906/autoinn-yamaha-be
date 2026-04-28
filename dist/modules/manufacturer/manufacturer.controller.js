@@ -3,8 +3,9 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 export class ManufacturerController {
     static async getAll(req, res, next) {
         try {
-            const manufacturers = await ManufacturerService.getAll();
-            return sendSuccess(res, 'Manufacturers fetched successfully', manufacturers);
+            const query = Object.keys(req.body).length > 0 ? req.body : req.query;
+            const result = await ManufacturerService.getAll(query);
+            return sendSuccess(res, 'Manufacturers fetched successfully', result);
         }
         catch (error) {
             return sendError(res, error.message);
