@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { IdGeneratorService } from './idGenerator.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
+import { handleApiError } from '../../utils/errorHandler.js';
 
 export const getAllIdGenerators = async (req: Request, res: Response) => {
     try {

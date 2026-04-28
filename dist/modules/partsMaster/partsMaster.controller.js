@@ -3,8 +3,9 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 export class PartsMasterController {
     static async getAll(req, res, next) {
         try {
-            const parts = await PartsMasterService.getAll();
-            return sendSuccess(res, 'Parts fetched successfully', parts);
+            const query = Object.keys(req.body).length > 0 ? req.body : req.query;
+            const result = await PartsMasterService.getAll(query);
+            return sendSuccess(res, 'Parts fetched successfully', result);
         }
         catch (error) {
             return sendError(res, error.message);

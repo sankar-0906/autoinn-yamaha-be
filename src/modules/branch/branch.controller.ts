@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { BranchService } from './branch.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
+import { handleApiError } from '../../utils/errorHandler.js';
 
 export class BranchController {
     static async getAllBranches(req: Request, res: Response, next: NextFunction) {

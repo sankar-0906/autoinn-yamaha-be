@@ -1,13 +1,32 @@
 import prisma from '../../utils/prisma.js';
 export class PartsMasterService {
-    static async getAll() {
-        return prisma.partsMaster.findMany({
-            include: {
-                hsn: true,
-                manufacturer: true,
-                vehicleSuit: true
-            }
-        });
+    static async getAll(query = {}) {
+        const { page = 1, limit = 10, search = '', searchString = '' } = query;
+        const skip = (Number(page) - 1) * Number(limit);
+        const take = Number(limit);
+        const effectiveSearch = String(search || searchString || '');
+        const where = {};
+        if (effectiveSearch) {
+            where.OR = [
+                { partNumber: { contains: effectiveSearch, mode: 'insensitive' } },
+                { partName: { contains: effectiveSearch, mode: 'insensitive' } }
+            ];
+        }
+        const [parts, total] = await Promise.all([
+            prisma.partsMaster.findMany({
+                where,
+                skip,
+                take,
+                include: {
+                    hsn: true,
+                    manufacturer: true,
+                    vehicleSuit: true
+                },
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.partsMaster.count({ where })
+        ]);
+        return { parts, total, page: Number(page), limit: take };
     }
     static async getById(id) {
         return prisma.partsMaster.findUnique({

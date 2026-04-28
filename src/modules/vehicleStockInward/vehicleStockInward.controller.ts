@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { VehicleStockInwardService } from './vehicleStockInward.service.js';
 import { VehicleDataRecoveryService } from './vehicleStockInward.recovery.service.js';
 import multer from 'multer';
+import { handleApiError } from '../../utils/errorHandler.js';
 
 interface MulterRequest extends Request {
     file?: any;
@@ -25,7 +26,7 @@ export class VehicleStockInwardController {
             res.json({ success: true, data });
         } catch (error: any) {
             console.error('[VehicleStockInwardController] Error processing PDF:', error);
-            res.status(500).json({ success: false, message: error.message, stack: error.stack });
+            return handleApiError(res, error);
         }
     }
 
@@ -50,13 +51,9 @@ export class VehicleStockInwardController {
         } catch (error: any) {
             // Handle duplicate invoice number error specifically
             if (error.message && error.message.includes('already exists')) {
-                return res.status(409).json({
-                    success: false,
-                    message: error.message,
-                    isDuplicate: true
-                });
+                return handleApiError(res, error);
             }
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
 
@@ -66,7 +63,7 @@ export class VehicleStockInwardController {
             const data = await VehicleStockInwardService.getAll({ branchId });
             res.json({ success: true, data });
         } catch (error: any) {
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
 
@@ -82,7 +79,7 @@ export class VehicleStockInwardController {
             }
             res.json({ success: true, data });
         } catch (error: any) {
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
 
@@ -93,7 +90,7 @@ export class VehicleStockInwardController {
             const data = await VehicleStockInwardService.update(id, req.body);
             res.json({ success: true, data });
         } catch (error: any) {
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
 
@@ -104,7 +101,7 @@ export class VehicleStockInwardController {
             await VehicleStockInwardService.delete(id);
             res.json({ success: true, message: 'Record deleted successfully' });
         } catch (error: any) {
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
 
@@ -130,7 +127,7 @@ export class VehicleStockInwardController {
             });
         } catch (error: any) {
             console.error('[RECOVERY] Error in vehicle data recovery:', error);
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
 
@@ -143,7 +140,7 @@ export class VehicleStockInwardController {
             const imageUrl = await VehicleStockInwardService.lookupVehicleImage(modelCode as string, colorCode as string);
             res.json({ success: true, data: imageUrl });
         } catch (error: any) {
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
 }

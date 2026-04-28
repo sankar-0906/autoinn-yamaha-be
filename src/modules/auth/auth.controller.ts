@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import prisma from '../../utils/prisma.js';
+import { handleApiError } from '../../utils/errorHandler.js';
 
 export class AuthController {
     static async login(req: Request, res: Response, next: NextFunction) {

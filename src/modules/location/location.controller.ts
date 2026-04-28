@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { LocationService } from './location.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
+import { handleApiError } from '../../utils/errorHandler.js';
 
 export class LocationController {
     static async getCountries(req: Request, res: Response, next: NextFunction) {

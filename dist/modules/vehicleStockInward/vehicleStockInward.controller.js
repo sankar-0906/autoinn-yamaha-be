@@ -1,5 +1,6 @@
 import { VehicleStockInwardService } from './vehicleStockInward.service.js';
 import { VehicleDataRecoveryService } from './vehicleStockInward.recovery.service.js';
+import { handleApiError } from '../../utils/errorHandler.js';
 export class VehicleStockInwardController {
     static async processPdf(req, res) {
         const multerReq = req;
@@ -16,7 +17,7 @@ export class VehicleStockInwardController {
         }
         catch (error) {
             console.error('[VehicleStockInwardController] Error processing PDF:', error);
-            res.status(500).json({ success: false, message: error.message, stack: error.stack });
+            return handleApiError(res, error);
         }
     }
     static async create(req, res) {
@@ -40,13 +41,9 @@ export class VehicleStockInwardController {
         catch (error) {
             // Handle duplicate invoice number error specifically
             if (error.message && error.message.includes('already exists')) {
-                return res.status(409).json({
-                    success: false,
-                    message: error.message,
-                    isDuplicate: true
-                });
+                return handleApiError(res, error);
             }
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
     static async getAll(req, res) {
@@ -56,7 +53,7 @@ export class VehicleStockInwardController {
             res.json({ success: true, data });
         }
         catch (error) {
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
     static async getById(req, res) {
@@ -72,7 +69,7 @@ export class VehicleStockInwardController {
             res.json({ success: true, data });
         }
         catch (error) {
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
     static async update(req, res) {
@@ -84,7 +81,7 @@ export class VehicleStockInwardController {
             res.json({ success: true, data });
         }
         catch (error) {
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
     static async delete(req, res) {
@@ -96,7 +93,7 @@ export class VehicleStockInwardController {
             res.json({ success: true, message: 'Record deleted successfully' });
         }
         catch (error) {
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
     static async recoverVehicleData(req, res) {
@@ -118,7 +115,7 @@ export class VehicleStockInwardController {
         }
         catch (error) {
             console.error('[RECOVERY] Error in vehicle data recovery:', error);
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
     static async lookupVehicleImage(req, res) {
@@ -131,7 +128,7 @@ export class VehicleStockInwardController {
             res.json({ success: true, data: imageUrl });
         }
         catch (error) {
-            res.status(500).json({ success: false, message: error.message });
+            return handleApiError(res, error);
         }
     }
 }

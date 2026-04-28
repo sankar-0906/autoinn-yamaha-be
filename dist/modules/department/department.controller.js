@@ -3,8 +3,9 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 export class DepartmentController {
     static async getAll(req, res, next) {
         try {
-            const departments = await DepartmentService.getAll();
-            return sendSuccess(res, 'Departments fetched successfully', departments);
+            const query = Object.keys(req.body).length > 0 ? req.body : req.query;
+            const result = await DepartmentService.getAll(query);
+            return sendSuccess(res, 'Departments fetched successfully', result);
         }
         catch (error) {
             return sendError(res, error.message);

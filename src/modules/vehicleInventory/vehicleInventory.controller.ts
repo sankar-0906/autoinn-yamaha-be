@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { VehicleInventoryService } from './vehicleInventory.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
+import { handleApiError } from '../../utils/errorHandler.js';
 
 export class VehicleInventoryController {
     static async getSummary(req: Request, res: Response) {

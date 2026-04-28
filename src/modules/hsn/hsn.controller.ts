@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { HsnService } from './hsn.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
+import { handleApiError } from '../../utils/errorHandler.js';
 
 export class HsnController {
     static async createHsn(req: Request, res: Response) {

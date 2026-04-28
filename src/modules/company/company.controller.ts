@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { CompanyService } from './company.service.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
+import { handleApiError } from '../../utils/errorHandler.js';
 
 export class CompanyController {
     static async getAll(req: Request, res: Response, next: NextFunction) {
