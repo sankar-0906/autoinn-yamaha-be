@@ -15,7 +15,6 @@ router.post('/', VehicleStockInwardController.create);
 router.get('/lookup-image', VehicleStockInwardController.lookupVehicleImage);
 // Other static routes
 router.post('/recover-data', VehicleStockInwardController.recoverVehicleData);
-router.get('/job/:jobId', VehicleStockInwardController.getJobStatus);
 // Dynamic routes
 router.get('/:id', VehicleStockInwardController.getById);
 router.put('/:id', VehicleStockInwardController.update);

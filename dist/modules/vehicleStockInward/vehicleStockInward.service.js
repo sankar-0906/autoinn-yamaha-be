@@ -548,16 +548,15 @@ export class VehicleStockInwardService {
         const prefix = path.join(tempDir, 'page');
         try {
             console.log(`[VehicleStockInwardService] Converting PDF to PNG images in ${tempDir}...`);
-            // Reduced DPI from 300 to 150 for faster processing
-            execSync(`pdftoppm -png -r 150 "${filePath}" "${prefix}"`);
+            execSync(`pdftoppm -png -r 300 "${filePath}" "${prefix}"`);
             const files = await fs.readdir(tempDir);
             const images = files.filter(f => f.endsWith('.png')).sort();
             let combinedText = "";
             for (const img of images) {
                 const imgPath = path.join(tempDir, img);
                 console.log(`[VehicleStockInwardService] OCRing ${img}...`);
-                // Always rotate 90° (no detection needed) and optimize Tesseract
-                const pageText = await VehicleStockInwardService.optimizedOCR(imgPath);
+                // Try original and rotated if needed
+                let pageText = await VehicleStockInwardService.ocrWithRotationRetry(imgPath);
                 combinedText += pageText + "\n\n";
             }
             return combinedText;
@@ -575,13 +574,27 @@ export class VehicleStockInwardService {
             }
         }
     }
-    static async optimizedOCR(imgPath) {
-        // Always rotate 90° (no detection loop needed)
-        execSync(`convert "${imgPath}" -rotate 90 "${imgPath}"`);
-        // Optimized Tesseract with character whitelist
-        const result = await Tesseract.recognize(imgPath, 'eng', {
-            tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/- .'
-        });
-        return result.data.text;
+    static async ocrWithRotationRetry(imgPath) {
+        // Try original first
+        const result = await Tesseract.recognize(imgPath, 'eng');
+        let text = result.data.text;
+        if (text.includes('DISPATCH ADVICE'))
+            return text;
+        // Try rotating matches
+        const rotations = [90, 180, 270];
+        for (const degrees of rotations) {
+            console.log(`[VehicleStockInwardService] "DISPATCH ADVICE" not found. Retrying with ${degrees} degree rotation...`);
+            const rotatedPath = imgPath.replace('.png', `_rot${degrees}.png`);
+            execSync(`convert "${imgPath}" -rotate ${degrees} "${rotatedPath}"`);
+            const rotResult = await Tesseract.recognize(rotatedPath, 'eng');
+            if (rotResult.data.text.includes('DISPATCH ADVICE') || rotResult.data.text.includes('YAMAHA')) {
+                console.log(`[VehicleStockInwardService] Header found with ${degrees} degree rotation!`);
+                return rotResult.data.text;
+            }
+            // Keep the best text just in case
+            if (rotResult.data.text.length > text.length)
+                text = rotResult.data.text;
+        }
+        return text;
     }
 }

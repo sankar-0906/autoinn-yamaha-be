@@ -5,15 +5,6 @@ import { sendError } from './response.js';
 export const handleApiError = (res: Response, error: any) => {
     console.error('[handleApiError] Caught Error:', error.message || error);
 
-    // Suppress database connection errors
-    if (error.message?.includes('Too many database connections opened') ||
-        error.message?.includes('remaining connection slots are reserved') ||
-        error.code === 'P1001' ||
-        error.code === 'P1002') {
-        console.log('[SUPPRESSED] Database connection error in API:', error.message);
-        return sendError(res, 'Service temporarily unavailable', 503);
-    }
-
     let statusCode = 500;
     let message = 'Internal Server Error';
 

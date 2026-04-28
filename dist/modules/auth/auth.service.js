@@ -17,13 +17,13 @@ export class AuthService {
     static async login(phone, pass) {
         const users = await prisma.user.findMany({
             where: {
-                phone2: phone,
+                phone,
                 status: true
             },
             include: { profile: true }
         });
         if (users.length === 0) {
-            console.log('Login Error: No active user found with this phone2');
+            console.log('Login Error: No active user found with this phone');
             throw new Error('User not found');
         }
         let authenticatedUser = null;
@@ -37,11 +37,11 @@ export class AuthService {
             }
         }
         if (!authenticatedUser) {
-            console.log('Login Error: Password mismatch for all matching phone2 records');
+            console.log('Login Error: Password mismatch for all matching phone records');
             throw new Error('Invalid credentials');
         }
         const user = authenticatedUser;
-        const token = this.generateToken({ id: user.id, phone: user.phone2 });
+        const token = this.generateToken({ id: user.id, phone: user.phone });
         // Update last login
         await prisma.user.update({
             where: { id: user.id },

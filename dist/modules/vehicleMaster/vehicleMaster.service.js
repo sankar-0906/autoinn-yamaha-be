@@ -167,12 +167,7 @@ export class VehicleMasterService {
         const models = await prisma.vehicleMaster.findMany({
             select: { modelCode: true },
             distinct: ['modelCode'],
-            where: {
-                modelCode: { not: null },
-                vehicleStatus: {
-                    in: ['Available', 'AVAILABLE', 'available']
-                }
-            }
+            where: { modelCode: { not: null } }
         });
         return models.map(m => m.modelCode).sort();
     }
