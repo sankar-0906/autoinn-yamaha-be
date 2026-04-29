@@ -33,7 +33,15 @@ export class VehicleInventoryService {
                     include: {
                         vehicleMaster: true,
                         inward: {
-                            include: { dealer: true, branch: true }
+                            include: { 
+                                dealer: {
+                                    include: {
+                                        address: { include: { district: true, state: true, country: true } },
+                                        shippingAddresses: { include: { district: true, state: true, country: true } }
+                                    }
+                                }, 
+                                branch: true 
+                            }
                         }
                     }
                 },
@@ -139,7 +147,15 @@ export class VehicleInventoryService {
                     include: {
                         vehicleMaster: true,
                         inward: {
-                            include: { dealer: true, branch: true }
+                            include: { 
+                                dealer: {
+                                    include: {
+                                        address: { include: { district: true, state: true, country: true } },
+                                        shippingAddresses: { include: { district: true, state: true, country: true } }
+                                    }
+                                }, 
+                                branch: true 
+                            }
                         }
                     }
                 },
