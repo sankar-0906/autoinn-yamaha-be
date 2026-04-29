@@ -25,7 +25,7 @@ export class DealerService {
                         include: { district: true, state: true, country: true }
                     },
                     shippingAddresses: {
-                        include: { branch: true, district: true, state: true, country: true }
+                        include: { district: true, state: true, country: true }
                     },
                     createdBy: true
                 },
@@ -45,7 +45,7 @@ export class DealerService {
                     include: { district: true, state: true, country: true }
                 },
                 shippingAddresses: {
-                    include: { branch: true, district: true, state: true, country: true }
+                    include: { district: true, state: true, country: true }
                 },
                 createdBy: true
             }
@@ -59,23 +59,12 @@ export class DealerService {
 
         const normalizeAddress = async (addr: any) => {
             if (!addr || typeof addr !== 'object') return null;
-            const { id: _, createdAt: __, updatedAt: ___, createdBy: ____, branch, ...cleanData } = addr;
-
-            // Link branch if provided
-            if (branch) {
-                const foundBranch = await prisma.branch.findFirst({
-                    where: {
-                        OR: [
-                            { id: branch },
-                            { name: { contains: branch, mode: 'insensitive' } }
-                        ]
-                    }
-                });
-                if (foundBranch) {
-                    (cleanData as any).branchId = foundBranch.id;
-                }
-            }
-
+            const { id: _, createdAt: __, updatedAt: ___, createdBy: ____, district, state, country, ...cleanData } = addr;
+            
+            // Mirror branch and branchId for compatibility
+            if (cleanData.branch && !cleanData.branchId) cleanData.branchId = cleanData.branch;
+            if (cleanData.branchId && !cleanData.branch) cleanData.branch = cleanData.branchId;
+            
             return Object.keys(cleanData).length > 0 ? cleanData : null;
         };
 
@@ -105,23 +94,12 @@ export class DealerService {
 
         const normalizeAddress = async (addr: any) => {
             if (!addr || typeof addr !== 'object') return null;
-            const { id: _, createdAt: __, updatedAt: ___, createdBy: ____, branch, ...cleanData } = addr;
-
-            // Link branch if provided
-            if (branch) {
-                const foundBranch = await prisma.branch.findFirst({
-                    where: {
-                        OR: [
-                            { id: branch },
-                            { name: { contains: branch, mode: 'insensitive' } }
-                        ]
-                    }
-                });
-                if (foundBranch) {
-                    (cleanData as any).branchId = foundBranch.id;
-                }
-            }
-
+            const { id: _, createdAt: __, updatedAt: ___, createdBy: ____, district, state, country, ...cleanData } = addr;
+            
+            // Mirror branch and branchId for compatibility
+            if (cleanData.branch && !cleanData.branchId) cleanData.branchId = cleanData.branch;
+            if (cleanData.branchId && !cleanData.branch) cleanData.branch = cleanData.branchId;
+            
             return Object.keys(cleanData).length > 0 ? cleanData : null;
         };
 
@@ -193,7 +171,7 @@ export class DealerService {
                 where: { id },
                 include: {
                     address: true,
-                    shippingAddresses: { include: { branch: true } }
+                    shippingAddresses: true
                 }
             });
         });

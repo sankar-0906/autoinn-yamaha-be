@@ -1,9 +1,12 @@
 import { Router } from 'express';
 import { VehicleStockInwardController } from './vehicleStockInward.controller.js';
 import multer from 'multer';
+import { authenticate } from '../../middlewares/auth.js';
 
 const upload = multer({ dest: 'uploads/' });
 const router = Router();
+
+router.use(authenticate);
 
 // Logging middleware for debugging
 router.use((req, res, next) => {

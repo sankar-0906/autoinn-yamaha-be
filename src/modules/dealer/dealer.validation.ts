@@ -10,7 +10,10 @@ const addressSchema = Joi.object({
     stateId: Joi.string().optional().allow(null, ''),
     countryId: Joi.string().optional().allow(null, ''),
     pincode: Joi.string().required(),
+    contactPerson: Joi.string().optional().allow(null, ''),
+    phoneNumber: Joi.string().optional().allow(null, ''),
     branchId: Joi.string().optional().allow(null, ''),
+    branch: Joi.string().optional().allow(null, ''),
     createdAt: Joi.any().optional(),
     updatedAt: Joi.any().optional(),
     createdBy: Joi.any().optional(),
@@ -19,8 +22,10 @@ const addressSchema = Joi.object({
 
 export const createDealerSchema = Joi.object({
     name: Joi.string().required(),
+    dealerCode: Joi.string().optional().allow(null, ''),
     dealerType: Joi.string().optional().allow(null, ''),
     GSTIN: Joi.string().optional().allow(null, ''),
+    password: Joi.string().optional().allow(null, ''),
     status: Joi.string().optional().allow(null, ''),
     email: Joi.string().email().optional().allow(null, ''),
     remarks: Joi.string().optional().allow(null, ''),
@@ -31,8 +36,10 @@ export const createDealerSchema = Joi.object({
 
 export const updateDealerSchema = Joi.object({
     name: Joi.string().optional(),
+    dealerCode: Joi.string().optional().allow(null, ''),
     dealerType: Joi.string().optional().allow(null, ''),
     GSTIN: Joi.string().optional().allow(null, ''),
+    password: Joi.string().optional().allow(null, ''),
     status: Joi.string().optional().allow(null, ''),
     email: Joi.string().email().optional().allow(null, ''),
     remarks: Joi.string().optional().allow(null, ''),

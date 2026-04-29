@@ -8,6 +8,7 @@ const JWT_SECRET = ENV.JWT_SECRET;
 
 export interface AuthRequest extends Request {
     user?: any;
+    branchIds?: string[];
 }
 
 export const authenticate = (
@@ -15,7 +16,7 @@ export const authenticate = (
     res: Response,
     next: NextFunction
 ) => {
-    const authReq = req as any;
+    const authReq = req as AuthRequest;
     const authHeader = authReq.headers?.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -27,6 +28,17 @@ export const authenticate = (
     try {
         const decoded = jwt.verify(token!, JWT_SECRET);
         authReq.user = decoded;
+
+        // Extract branch IDs from header
+        const branchIdsHeader = req.headers['x-branch-ids'];
+        if (branchIdsHeader) {
+            try {
+                authReq.branchIds = JSON.parse(branchIdsHeader as string);
+            } catch (e) {
+                authReq.branchIds = [];
+            }
+        }
+
         next();
     } catch (error) {
         return sendError(res, 'Invalid or expired token', 401);

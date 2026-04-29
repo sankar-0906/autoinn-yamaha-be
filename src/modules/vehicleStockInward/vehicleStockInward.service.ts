@@ -426,10 +426,13 @@ export class VehicleStockInwardService {
     }
 
     static async getAll(query: any) {
-        const { branchId } = query;
+        const { branchIds } = query;
+        const useBranchFilter = branchIds && branchIds.length > 0 && !branchIds.includes('ALL');
+        const where = useBranchFilter ? { branchId: { in: branchIds } } : {};
+
         try {
             const records = await (prisma as any).vehicleStockInward.findMany({
-                where: branchId ? { branchId } : {},
+                where,
                 include: {
                     items: { include: { vehicleMaster: true, image: true } },
                     lineItems: {
@@ -440,7 +443,8 @@ export class VehicleStockInwardService {
                             }
                         }
                     },
-                    createdBy: true
+                    createdBy: true,
+                    branch: true
                 },
                 orderBy: { createdAt: 'desc' },
             });
@@ -448,7 +452,7 @@ export class VehicleStockInwardService {
         } catch (error: any) {
             console.log('[VehicleStockInwardService] Using legacy getAll due to:', error.message);
             const records = await (prisma as any).vehicleStockInward.findMany({
-                where: branchId ? { branchId } : {},
+                where,
                 include: {
                     items: { include: { vehicleMaster: true, image: true } },
                     createdBy: true
@@ -474,6 +478,7 @@ export class VehicleStockInwardService {
                 },
                 manufacturer: true,
                 createdBy: true,
+                branch: true
             },
         });
         if (!record) return null;

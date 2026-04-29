@@ -111,12 +111,14 @@ model Address {
   stateId          String?
   countryId        String?
   pincode          String?
+  contactPerson    String?
+  phoneNumber      String?
   createdById      String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   dealerShippingId String?
   branchId         String?
-  branch           Branch?           @relation("AddressLinkedToBranch", fields: [branchId], references: [id])
+  branch           String?
   district         City?             @relation("AddressHasCity", fields: [cityId], references: [id])
   country          Country?          @relation("AddressHasCountry", fields: [countryId], references: [id])
   createdBy        User?             @relation("AddressWasCreatedByUser", fields: [createdById], references: [id])
@@ -353,6 +355,8 @@ model ServiceDetail {
 model Dealer {
   id                String               @id @default(cuid())
   name              String?
+  dealerCode        String?
+  password          String?
   dealerType        String?
   GSTIN             String?
   status            String?
@@ -439,7 +443,6 @@ model Branch {
   lat                 Float?
   lon                 Float?
   googleMapUrl        String?
-  shippingAddresses   Address[]            @relation("AddressLinkedToBranch")
   address             Address?             @relation("BranchHasAddress", fields: [addressId], references: [id], onDelete: Cascade)
   company             Company?             @relation("CompanyHasManyBranch", fields: [companyId], references: [id], onDelete: Cascade)
   createdBy           User?                @relation("BranchWasCreatedByUser", fields: [createdById], references: [id])

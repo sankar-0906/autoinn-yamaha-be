@@ -64,23 +64,20 @@ export class VehicleStockInwardController {
     static async create(req: Request, res: Response) {
         try {
             const createdById = (req as any).user?.id;
-            const branchId = (req as any).user?.branchId;
+            // Use branchId from body if provided, otherwise fallback to user's branchId
+            const branchId = req.body.branchId || (req as any).user?.branchId;
 
-            // Try hierarchical creation first, fallback to legacy if not available
+            // Try hierarchical creation first
             let data;
             try {
-                // Use hierarchical creation for new records (from PDF processing)
-                // This preserves all original data including modelCode, qty, colorCode
                 data = await VehicleStockInwardService.createHierarchical(req.body, createdById, branchId);
             } catch (hierarchicalError: any) {
                 console.log('[VehicleStockInwardController] Falling back to legacy create due to:', hierarchicalError.message);
-                // Fallback to legacy method
                 data = await VehicleStockInwardService.create(req.body, createdById, branchId);
             }
 
             res.status(201).json({ success: true, data });
         } catch (error: any) {
-            // Handle duplicate invoice number error specifically
             if (error.message && error.message.includes('already exists')) {
                 return handleApiError(res, error);
             }
@@ -88,10 +85,11 @@ export class VehicleStockInwardController {
         }
     }
 
-    static async getAll(req: Request, res: Response) {
+    static async getAll(req: any, res: Response) {
         try {
-            const branchId = (req as any).user?.branchId;
-            const data = await VehicleStockInwardService.getAll({ branchId });
+            const authReq = req as any;
+            const branchIds = authReq.branchIds;
+            const data = await VehicleStockInwardService.getAll({ branchIds });
             res.json({ success: true, data });
         } catch (error: any) {
             return handleApiError(res, error);
