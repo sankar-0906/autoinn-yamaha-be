@@ -15,6 +15,10 @@ export class DealerService {
             ];
         }
 
+        if (query.status) {
+            where.status = query.status;
+        }
+
         const [dealers, total] = await Promise.all([
             prisma.dealer.findMany({
                 where,
