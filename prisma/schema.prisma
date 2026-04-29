@@ -3,30 +3,26 @@ generator client {
   previewFeatures = ["driverAdapters"]
 }
 
-
-
-
 datasource db {
   provider = "postgresql"
 }
 
 model Company {
-  id            String   @id @default(cuid())
-  name          String
-  cin           String?
-  pan           String?
-  email         String?
-  logo          String?
-  website       String?
-  contactPerson String?
-  phone         String?
-  addressId     String?
-  createdById   String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  branches      Branch[] @relation("CompanyHasManyBranch")
-  address       Address? @relation("CompanyHasAddress", fields: [addressId], references: [id], onDelete: Cascade)
-  createdBy     User?    @relation("CompanyWasCreatedByUser", fields: [createdById], references: [id])
+  id          String   @id @default(cuid())
+  name        String
+  cin         String?
+  pan         String?
+  email       String?
+  logo        String?
+  website     String?
+  phone       String?
+  addressId   String?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  branches    Branch[] @relation("CompanyHasManyBranch")
+  address     Address? @relation("CompanyHasAddress", fields: [addressId], references: [id], onDelete: Cascade)
+  createdBy   User?    @relation("CompanyWasCreatedByUser", fields: [createdById], references: [id])
 }
 
 model Department {
@@ -120,12 +116,12 @@ model Address {
   updatedAt        DateTime          @updatedAt
   dealerShippingId String?
   branchId         String?
+  branch           Branch?           @relation("AddressLinkedToBranch", fields: [branchId], references: [id])
   district         City?             @relation("AddressHasCity", fields: [cityId], references: [id])
   country          Country?          @relation("AddressHasCountry", fields: [countryId], references: [id])
   createdBy        User?             @relation("AddressWasCreatedByUser", fields: [createdById], references: [id])
-  state            State?            @relation("AddressHasState", fields: [stateId], references: [id])
   dealerShipping   Dealer?           @relation("DealerHasShippingAddresses", fields: [dealerShippingId], references: [id], onDelete: Cascade)
-  branch           Branch?           @relation("AddressLinkedToBranch", fields: [branchId], references: [id])
+  state            State?            @relation("AddressHasState", fields: [stateId], references: [id])
   branches         Branch[]          @relation("BranchHasAddress")
   companies        Company[]         @relation("CompanyHasAddress")
   dealers          Dealer[]          @relation("DealerHasAddress")
@@ -366,9 +362,9 @@ model Dealer {
   createdById       String?
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
+  shippingAddresses Address[]            @relation("DealerHasShippingAddresses")
   address           Address?             @relation("DealerHasAddress", fields: [addressId], references: [id], onDelete: Cascade)
   createdBy         User?                @relation("DealerWasCreatedBy", fields: [createdById], references: [id])
-  shippingAddresses Address[]            @relation("DealerHasShippingAddresses")
   inwards           VehicleStockInward[] @relation("InwardHasDealer")
 }
 
@@ -443,6 +439,7 @@ model Branch {
   lat                 Float?
   lon                 Float?
   googleMapUrl        String?
+  shippingAddresses   Address[]            @relation("AddressLinkedToBranch")
   address             Address?             @relation("BranchHasAddress", fields: [addressId], references: [id], onDelete: Cascade)
   company             Company?             @relation("CompanyHasManyBranch", fields: [companyId], references: [id], onDelete: Cascade)
   createdBy           User?                @relation("BranchWasCreatedByUser", fields: [createdById], references: [id])
@@ -452,7 +449,6 @@ model Branch {
   manufacturer        Manufacturer[]       @relation("BranchHasManufacturers")
   personInCharge      User[]               @relation("BranchHasManyUser")
   employeeProfiles    EmployeeProfile[]    @relation("UserProfileHasBranch")
-  shippingAddresses   Address[]            @relation("AddressLinkedToBranch")
 }
 
 model BranchContacts {
@@ -536,13 +532,7 @@ model IndividualVehicle {
   createdAt  DateTime                @default(now())
   updatedAt  DateTime                @updatedAt
   image      Image?                  @relation("VehicleHasColor", fields: [imageId], references: [id])
-  lineItem   InwardLineItem           @relation("VehicleBelongsToLineItem", fields: [lineItemId], references: [id], onDelete: Cascade)
-}
-
-enum IndividualVehicleStatus {
-  AVAILABLE
-  SOLD
-  RESERVED
+  lineItem   InwardLineItem          @relation("VehicleBelongsToLineItem", fields: [lineItemId], references: [id], onDelete: Cascade)
 }
 
 model VehicleStockInward {
@@ -573,9 +563,9 @@ model VehicleStockInward {
   lineItems       InwardLineItem[]   @relation("InwardHasLineItems")
   branch          Branch?            @relation("InwardHasBranch", fields: [branchId], references: [id])
   createdBy       User?              @relation("InwardWasCreatedBy", fields: [createdById], references: [id])
+  dealer          Dealer?            @relation("InwardHasDealer", fields: [dealerId], references: [id])
   manufacturer    Manufacturer?      @relation("InwardHasManufacturer", fields: [manufacturerId], references: [id])
   items           VehicleStockItem[] @relation("InwardHasItems")
-  dealer          Dealer?             @relation("InwardHasDealer", fields: [dealerId], references: [id])
 }
 
 model VehicleStockItem {
@@ -592,7 +582,11 @@ model VehicleStockItem {
   vehicleMaster   VehicleMaster?     @relation("ItemHasVehicle", fields: [vehicleMasterId], references: [id])
 }
 
-
+enum IndividualVehicleStatus {
+  AVAILABLE
+  SOLD
+  RESERVED
+}
 
 enum AccType {
   SAVINGS

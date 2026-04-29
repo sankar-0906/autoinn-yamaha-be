@@ -2,12 +2,17 @@ const { PrismaClient } = require('@prisma/client');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { Pool } = require('pg');
 const fs = require('fs');
+require('dotenv').config();
 
-// Connect to local database
-const connectionString = "postgresql://autoinn:autoinn_pass@localhost:5433/autoinn_dev";
-const pool = new Pool({ connectionString });
+// Connect to target database from .env
+const connectionString = process.env.DATABASE_URL;
+const pool = new Pool({ 
+    connectionString,
+    ssl: connectionString.includes('sslmode=no-verify') ? { rejectUnauthorized: false } : undefined
+});
 const adapter = new PrismaPg(pool);
 const prismaTarget = new PrismaClient({ adapter });
+
 
 async function importData() {
     console.log('Reading exported data...');
@@ -30,10 +35,22 @@ async function importData() {
         for (let i = 0; i < records.length; i += BATCH_SIZE) {
             const batch = records.slice(i, i + BATCH_SIZE).map(record => {
                 // Remove known incompatible fields
-                const { customerDetails, profile, ...cleanRecord } = record;
+                const { customerDetails, profile, createdBy, updatedBy, deletedBy, ...cleanRecord } = record;
+                
+                // Solve circular dependencies for batching
+                if (modelName === 'Address') {
+                    delete cleanRecord.branchId;
+                    delete cleanRecord.dealerShippingId;
+                }
+                if (modelName === 'User') {
+                    delete cleanRecord.createdById;
+                }
+
                 // Fix any potential nulls in required fields if necessary
                 return cleanRecord;
             });
+
+
 
             try {
                 try {
@@ -67,6 +84,17 @@ async function importData() {
                                         delete item[field];
                                         continue;
                                     }
+                                } else if (e.message.includes('Foreign key constraint violated')) {
+                                    const match = e.message.match(/constraint: `(.+?)_(.+?)_fkey`/);
+                                    if (match) {
+                                        const field = match[2];
+                                        console.warn(`    - Stripping FK field: ${field}`);
+                                        delete item[field];
+                                        continue;
+                                    } else {
+                                        console.error(`    - Failed FK insert:`, e.message);
+                                        break;
+                                    }
                                 } else if (e.message.includes('Unique constraint failed')) {
                                     success = true; // Skip already exists
                                 } else {
@@ -84,10 +112,10 @@ async function importData() {
         }
     }
 
+
     // Disable foreign key checks temporarily
     try {
-        await prismaTarget.$executeRawUnsafe("SET session_replication_role = 'replica';");
-        console.log('Foreign key checks disabled.');
+        console.log('Starting import (FK checks enabled)...');
 
         // Import in correct dependency order
         await insertRecords(prismaTarget.user, data.users, 'User');
@@ -97,11 +125,11 @@ async function importData() {
         await insertRecords(prismaTarget.access, data.accesses, 'Access');
         await insertRecords(prismaTarget.department, data.departments, 'Department');
         await insertRecords(prismaTarget.hsn, data.hsns, 'Hsn');
-        await insertRecords(prismaTarget.address, data.addresses, 'Address');
         await insertRecords(prismaTarget.company, data.companies, 'Company');
         await insertRecords(prismaTarget.manufacturer, data.manufacturers, 'Manufacturer');
         await insertRecords(prismaTarget.dealer, data.dealers, 'Dealer');
         await insertRecords(prismaTarget.branch, data.branches, 'Branch');
+        await insertRecords(prismaTarget.address, data.addresses, 'Address'); // Address depends on many things
         await insertRecords(prismaTarget.bankDetails, data.bankDetails, 'BankDetails');
         await insertRecords(prismaTarget.employeeProfile, data.employeeProfiles, 'EmployeeProfile');
         await insertRecords(prismaTarget.vehicleMaster, data.vehicleMasters, 'VehicleMaster');
@@ -120,17 +148,13 @@ async function importData() {
         await insertRecords(prismaTarget.supplierContact, data.supplierContacts, 'SupplierContact');
         await insertRecords(prismaTarget.serviceDetail, data.serviceDetails, 'ServiceDetail');
 
+
         console.log('✅ All data imported successfully!');
     } catch (error) {
         console.error('Import process failed:', error);
     } finally {
         // Re-enable foreign key checks
-        try {
-            await prismaTarget.$executeRawUnsafe("SET session_replication_role = 'origin';");
-            console.log('Foreign key checks re-enabled.');
-        } catch (e) {
-            console.error('Failed to re-enable FK checks:', e.message);
-        }
+
         await prismaTarget.$disconnect();
         await pool.end();
     }

@@ -44,9 +44,8 @@ export class VehicleInventoryService {
             if (!master) return;
 
             const dealer = v.lineItem?.inward?.dealer;
-            const dealerIdKey = dealer?.id || 'UNKNOWN';
             const colorCode = v.colorCode || 'UNKNOWN';
-            const key = `${master.id}_${colorCode}_${dealerIdKey}`;
+            const key = `${master.id}_${colorCode}`;
 
             if (!groups[key]) {
                 groups[key] = {
@@ -57,13 +56,26 @@ export class VehicleInventoryService {
                     category: master.category,
                     color: v.image?.color || v.colorCode || 'UNKNOWN',
                     colorCode: v.colorCode,
-                    dealerName: dealer?.name || 'UNKNOWN',
-                    dealerId: dealer?.id || 'all',
+                    dealers: [],
+                    dealerName: '',
                     quantity: 0,
                     imageUrl: v.image?.url || null
                 };
             }
+            
             groups[key].quantity += 1;
+            
+            if (dealer) {
+                const alreadyAdded = groups[key].dealers.find((d: any) => d.id === dealer.id);
+                if (!alreadyAdded) {
+                    groups[key].dealers.push({ id: dealer.id, name: dealer.name });
+                }
+            }
+        });
+
+        // Post-process to join dealer names
+        Object.values(groups).forEach(group => {
+            group.dealerName = group.dealers.map((d: any) => d.name).join(', ');
         });
 
         return Object.values(groups).sort((a, b) => a.modelName.localeCompare(b.modelName));
